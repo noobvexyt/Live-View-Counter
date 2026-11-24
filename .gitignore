@@ -1,0 +1,20 @@
+# Your API key and the counter's saved progress live here. Never commit or share it.
+data/
+
+# Secrets and local settings
+.env
+.env.*
+.vercel/
+.claude/settings.local.json
+
+# Built for uploading to Vercel (rebuild it from the files here instead)
+*.zip
+
+# Installed packages and logs
+node_modules/
+*.log
+
+# Editor and system files
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,14 @@
+{
+  "name": "live-view-counter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Your YouTube channel's total views, counting up live.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js --open"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

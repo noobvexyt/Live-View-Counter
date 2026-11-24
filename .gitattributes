@@ -1,0 +1,5 @@
+# Keep the code's line endings as they are (LF), whatever the computer.
+* text=auto eol=lf
+# Windows batch files need Windows line endings.
+*.bat text eol=crlf
+*.ico binary
