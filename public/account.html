@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your account · Live View Counter</title>
+  <meta name="robots" content="noindex">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0f0f0f">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/site.css">
+</head>
+<body data-page="account">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-head">
+    <div class="wrap head-row">
+      <a class="brand" href="/"><img src="/favicon.svg" alt="" width="28" height="28">Live View Counter</a>
+      <nav class="head-nav" aria-label="Main">
+        <a href="/account" data-user-page data-when-user hidden>My page</a>
+        <a href="/account" data-when-user hidden>Account</a>
+        <button class="link-btn" type="button" data-signout data-when-user hidden>Sign out</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="wrap narrow">
+      <div class="doc">
+        <h1>Your account</h1>
+        <p id="loading" class="muted" role="status">Loading…</p>
+        <p id="load-error" class="form-error" role="alert" hidden></p>
+      </div>
+
+      <div id="account" class="acct-grid" hidden>
+        <p id="suspended-note" class="notice bad" hidden></p>
+
+        <!-- Your page -->
+        <section class="acct-section" aria-labelledby="page-title">
+          <h2 id="page-title">Your page</h2>
+          <p>Your counters live at this address. Open it to connect your channel and change how it looks.</p>
+          <div class="copy-row">
+            <code id="page-url"></code>
+            <button id="btn-copy-url" class="btn ghost small" type="button">Copy</button>
+          </div>
+          <div class="btn-row">
+            <a id="btn-open-page" class="btn" href="/account">Open my page</a>
+          </div>
+
+          <h3>Who can see it</h3>
+          <div class="switch-row">
+            <div>
+              <span id="vis-pill" class="pill"></span>
+              <p id="vis-text" class="fine mt-s"></p>
+            </div>
+          </div>
+          <div class="btn-row mt-s">
+            <button id="btn-visibility" class="btn ghost small" type="button"></button>
+          </div>
+          <p id="vis-error" class="form-error mt-s" role="alert" hidden></p>
+          <p class="fine mt-s">A public page shows your counters, your channel’s name and picture, and your username (it’s in the address). Anyone who has the address can see it, so think about who you share it with. You need a public page to use it in OBS. After you make it private, copies kept by our hosting provider can take up to 2 minutes to disappear.</p>
+        </section>
+
+        <!-- About the account -->
+        <section class="acct-section" aria-labelledby="about-title">
+          <h2 id="about-title">Account details</h2>
+          <dl class="facts">
+            <div><dt>Username</dt><dd id="f-name"></dd></div>
+            <div><dt>Made</dt><dd id="f-created"></dd></div>
+            <div><dt>Last signed in</dt><dd id="f-signin"></dd></div>
+            <div><dt>Password last changed</dt><dd id="f-pw"></dd></div>
+            <div><dt>YouTube channel</dt><dd id="f-youtube"></dd></div>
+            <div><dt>Counters</dt><dd id="f-counters"></dd></div>
+            <div><dt>This sign-in lasts until</dt><dd id="f-session"></dd></div>
+          </dl>
+          <p class="fine mt-s">Usernames can’t be changed. If your account isn’t used for 12 months (nobody signs in or opens your page), it’s deleted automatically.</p>
+        </section>
+
+        <!-- Password -->
+        <section class="acct-section" aria-labelledby="pw-title">
+          <h2 id="pw-title">Change your password</h2>
+          <form id="pw-form" class="form" novalidate>
+            <input type="text" name="username" autocomplete="username" class="hp" tabindex="-1" aria-hidden="true" id="pw-username">
+            <div class="field">
+              <label class="field-label" for="pw-current">Current password</label>
+              <input id="pw-current" type="password" autocomplete="current-password" maxlength="200" required>
+            </div>
+            <div class="field">
+              <label class="field-label" for="pw-new">New password</label>
+              <div class="pw-row">
+                <input id="pw-new" type="password" autocomplete="new-password" maxlength="200" aria-describedby="pw-new-hint" required>
+                <button class="btn ghost small" type="button" data-toggle-pw="pw-new" aria-controls="pw-new">Show</button>
+              </div>
+              <span id="pw-new-hint" class="field-hint">At least 10 characters. Changing it signs you out on every other device.</span>
+            </div>
+            <p id="pw-error" class="form-error" role="alert" hidden></p>
+            <p id="pw-done" class="notice good" role="status" hidden>Password changed. You’ve been signed out everywhere else.</p>
+            <div><button id="btn-pw" class="btn small" type="submit">Change password</button></div>
+          </form>
+        </section>
+
+        <!-- Recovery code -->
+        <section class="acct-section" aria-labelledby="rc-title">
+          <h2 id="rc-title">Recovery code</h2>
+          <p>Your recovery code lets you back in if you forget your password. If you’ve lost it, or think someone else has seen it, make a new one. The old one stops working straight away.</p>
+          <form id="rc-form" class="form" novalidate>
+            <div class="field">
+              <label class="field-label" for="rc-password">Your password</label>
+              <input id="rc-password" type="password" autocomplete="current-password" maxlength="200" required>
+            </div>
+            <p id="rc-error" class="form-error" role="alert" hidden></p>
+            <div><button id="btn-rc" class="btn ghost small" type="submit">Make a new recovery code</button></div>
+          </form>
+          <div id="rc-result" hidden>
+            <div id="code-value" class="code-box"></div>
+            <div class="btn-row mt-0">
+              <button id="btn-copy-code" class="btn ghost small" type="button">Copy</button>
+              <button id="btn-download-code" class="btn ghost small" type="button">Download as a file</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Signing in -->
+        <section class="acct-section" aria-labelledby="sessions-title">
+          <h2 id="sessions-title">Signing in</h2>
+          <p>Signed in somewhere you shouldn’t be, like a shared computer? Sign out everywhere, then change your password if you think someone else knows it.</p>
+          <div class="btn-row">
+            <button class="btn ghost small" type="button" data-signout>Sign out</button>
+            <button id="btn-signout-all" class="btn ghost small" type="button">Sign out everywhere</button>
+          </div>
+          <p id="sessions-error" class="form-error mt-s" role="alert" hidden></p>
+        </section>
+
+        <!-- Your data -->
+        <section class="acct-section" aria-labelledby="data-title">
+          <h2 id="data-title">Your data</h2>
+          <p>Download a copy of everything we keep about your account, in a file you can open with any text editor. See the <a href="/privacy">Privacy policy</a> for what we keep, why, and your rights.</p>
+          <div class="btn-row">
+            <a class="btn ghost small" href="/api/me/export" download>Download my data</a>
+          </div>
+        </section>
+
+        <!-- Delete -->
+        <section class="acct-section danger-zone" aria-labelledby="delete-title">
+          <h2 id="delete-title">Delete your account</h2>
+          <p>This deletes your account, your page and its settings straight away. It can’t be undone. Your username becomes free for someone else to use.</p>
+          <div class="btn-row">
+            <button id="btn-delete" class="btn danger small" type="button">Delete my account…</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="delete-dialog" class="confirm" aria-labelledby="dd-title">
+    <form id="delete-form" class="form mt-0" novalidate>
+      <h2 id="dd-title">Delete your account?</h2>
+      <p class="mt-0">Your account, page and settings are deleted for good. Copies of a public page kept by our hosting provider can take up to 2 minutes to disappear.</p>
+      <div class="field">
+        <label class="field-label" for="dd-confirm">Type your username, <b id="dd-name"></b>, to confirm</label>
+        <input id="dd-confirm" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="40" required>
+      </div>
+      <div class="field">
+        <label class="field-label" for="dd-password">Your password</label>
+        <input id="dd-password" type="password" autocomplete="current-password" maxlength="200" required>
+      </div>
+      <p id="dd-error" class="form-error" role="alert" hidden></p>
+      <div class="btn-row mt-0">
+        <button id="btn-dd-delete" class="btn danger solid" type="submit">Delete for good</button>
+        <button id="btn-dd-cancel" class="btn ghost" type="button">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <nav aria-label="Site">
+        <a href="/">Home</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/cookies">Cookies</a>
+        <button type="button" data-cookie-settings>Cookie settings</button>
+        <a href="/contact">Contact and reports</a>
+      </nav>
+      <p>Live View Counter is run by <span data-owner>NoobVex</span> in the United Kingdom. Not affiliated with or endorsed by YouTube, Google or Bluesky.</p>
+    </div>
+  </footer>
+
+  <script src="/site.js"></script>
+  <script src="/pages.js"></script>
+</body>
+</html>

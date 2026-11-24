@@ -1,21 +1,36 @@
 # Live View Counter: website version (Vercel)
 
-This is the version of the counter that runs as a public website on Vercel. Visitors see your counters; only you can change them, after signing in with your own password.
+This is the version of the counter that runs as a public website on Vercel. Anyone aged 13 or over can sign up with a username and password, connect their YouTube channel (and Bluesky accounts), and get their own counter page at `/u/<username>`. Pages are private until their owner makes them public.
 
 How it differs from the copy on your PC:
 
-- **Official numbers only.** YouTube counters show your channel's official statistics from the YouTube Data API, checked about once a minute. There's no estimated "live" count, pace, chart or goal bar for YouTube, because YouTube's API rules don't allow showing independently calculated figures to the public.
-- **YouTube, Bluesky and Instagram only.** TikTok, Twitch and Kick aren't offered on the website, because they have no official API for this and their terms don't allow reading their pages automatically.
+- **Official numbers only.** YouTube counters show the channel's official statistics from the YouTube Data API, checked about once a minute. There's no estimated "live" count, pace, chart or goal bar for YouTube, because YouTube's API rules don't allow showing independently calculated figures to the public.
+- **YouTube and Bluesky only.** TikTok, Twitch and Kick aren't offered on the website, because they have no official API for this and their terms don't allow reading their pages automatically. Instagram isn't offered either, because its API only works with each person's own access token.
+- **No uploads.** People can't upload pictures or sounds, so there's nothing for you to check or moderate there.
 - **Privacy built in.** Privacy policy, terms and cookie policy pages, a privacy choices banner (fonts from Google and Vercel Web Analytics only run if a visitor allows them), and nothing personal stored about visitors.
+
+## The pages
+
+| Address | What it is |
+| --- | --- |
+| `/` | Home page: what the site does, how it works, questions and answers |
+| `/signup` | Create an account. Shows a recovery code once, for getting back in without an email address |
+| `/signin` | Sign in |
+| `/forgot` | Set a new password with the recovery code |
+| `/account` | Make the page public or private, change password, new recovery code, sign out everywhere, download your data, delete the account |
+| `/u/<username>` | Someone's counter page. The owner can change it while signed in. Everyone else only sees it if it's public |
+| `/contact` | How to report a page, complain, ask about data, or report a security problem |
+| `/privacy`, `/terms`, `/cookies` | The legal pages |
+| `/admin` | For you only: look up an account by username, suspend it, lift a suspension, or delete it |
 
 ## What's in this folder
 
 | Path | What it is |
 | --- | --- |
-| `public/` | The pages, styles and scripts visitors download, plus `privacy.html`, `terms.html` and `cookies.html` |
+| `public/` | The pages, styles and scripts visitors download |
 | `api/index.js` | The server part: one Vercel Function that answers every `/api/...` request |
-| `src/` | Shared code for reading YouTube, Bluesky and Instagram, and talking to the database |
-| `vercel.json` | Vercel settings: where the pages are, the London region, and security headers |
+| `src/` | Shared code for reading YouTube and Bluesky, and talking to the database |
+| `vercel.json` | Vercel settings: where the pages are, the page addresses, the London region, and security headers |
 | `package.json` | Tells Vercel this is a Node.js project. There's nothing to install. |
 
 ## Put it online
@@ -26,7 +41,7 @@ You need a free [Vercel](https://vercel.com) account. Vercel's free **Hobby** pl
 
 Pick one:
 
-- **With GitHub (no command line):** create a new private repository on GitHub, choose **Add file → Upload files**, and drag in everything from this folder (keep the folders). Then in Vercel: **Add New… → Project**, import that repository, leave **Framework Preset** on **Other**, and click **Deploy**.
+- **With GitHub (no command line):** create a new private repository on GitHub, choose **Add file → Upload files**, and drag in everything from this folder (keep the folders, and leave out the `data` folder, which belongs to the copy on your PC). Then in Vercel: **Add New… → Project**, import that repository, leave **Framework Preset** on **Other**, and click **Deploy**.
 - **With the Vercel command line:** open a terminal in this folder and run `npx vercel`, answer the questions (accept the defaults), then run `npx vercel --prod`.
 
 The first deployment works, but the site can't save anything until the next two steps are done.
@@ -41,47 +56,63 @@ In the project, open **Settings → Environment Variables** and add:
 
 | Name | Needed? | What to put |
 | --- | --- | --- |
-| `ADMIN_PASSWORD` | Yes | The password you'll use to sign in. At least 12 characters; a long random one is best. Don't reuse a password from anywhere else. |
-| `OWNER_NAME` | Strongly recommended | Your name or your business's name. The privacy policy, terms and cookie policy show it as the person running the site. UK data protection law expects that to be stated. |
-| `YOUTUBE_API_KEY` | Optional | A YouTube Data API key. If you leave it out, you paste the key on the setup page instead and it's kept in the database. |
-| `SESSION_SECRET` | Optional | Any long random text. Changing it signs you out everywhere. Without it, sign-ins are tied to `ADMIN_PASSWORD`. |
+| `YOUTUBE_API_KEY` | Yes, for YouTube | A YouTube Data API key (steps below). Without it, people can sign up but can't connect a YouTube channel. |
+| `ADMIN_PASSWORD` | Yes | The password for `/admin`, where you deal with reports. At least 12 characters; a long random one is best. Don't reuse a password from anywhere else. |
+| `OWNER_NAME` | Strongly recommended | Your name or your business's name. The legal pages show it as the person running the site. UK data protection law expects that to be stated. |
+| `MAX_USERS` | Optional | The most accounts the site allows. Default `300`. When it's full, the sign-up page says so. |
+| `SIGNUPS` | Optional | Set to `closed` to pause new sign-ups. Existing accounts keep working. |
+| `WEB_ANALYTICS` | Optional | Set to `1` to offer visitors Vercel Web Analytics (see step 5). |
+| `SESSION_SECRET` | Optional | Any random text of 32 characters or more. It signs the sign-in cookies. Without it, the site makes one and keeps it in the database. Changing it signs everyone out. |
 
 Then redeploy so the settings take effect: **Deployments → ⋯ next to the latest one → Redeploy**.
 
-**Use a separate YouTube API key for the website.** The copy on your PC uses most of its key's free daily allowance by design, so sharing that key would leave the website short. Create a second Google Cloud project with its own key: [create a project](https://console.cloud.google.com/projectcreate), [enable YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com) for it, then [Credentials](https://console.cloud.google.com/apis/credentials) → **Create credentials** → **API key**, and restrict the key to **YouTube Data API v3**. (The setup page on the site shows these steps too.) The website uses at most about 1,440 of the 10,000 free units a day.
+**Use a separate YouTube API key for the website.** The copy on your PC uses most of its key's free daily allowance by design, so sharing that key would leave the website short. Create a second Google Cloud project with its own key: [create a project](https://console.cloud.google.com/projectcreate), [enable YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com) for it, then [Credentials](https://console.cloud.google.com/apis/credentials) → **Create credentials** → **API key**, and restrict the key to **YouTube Data API v3**.
 
-### 4. Set up the counter
+The site reads every channel that's being watched in one go, once a minute, 50 channels per request. Each request costs 1 of the key's 10,000 free units a day, so up to 50 channels watched at once use about 1,440 units a day, and the default limit of 300 accounts stays under 10,000 even if every one of them is open all day. If you raise `MAX_USERS` well above 300, ask Google for more quota first.
 
-1. Open your site and click **Owner sign-in** at the bottom. Enter your `ADMIN_PASSWORD`.
-2. Enter your channel, paste your API key (unless you set `YOUTUBE_API_KEY`), tick the box to agree to the terms, and click **Start counting**.
-3. Press `S` (or the gear icon) to add Bluesky or Instagram counters and change the look. Changes are saved straight away, and visitors see them within about a minute.
-4. Click **Sign out** at the bottom when you're done. The sign-in lasts 7 days otherwise.
+### 4. Make your own account
+
+1. Open your site, click **Sign up**, and pick your username (for example the name you use on YouTube). Usernames are first come, first served, so do this before you share the link.
+2. Save the recovery code it shows you. It's the only way back in if you forget your password, because the site doesn't ask for an email address.
+3. Enter your channel and click **Start counting**. Press `S` (or the gear icon) to add Bluesky counters and change the look.
+4. On **Account**, make your page public when you're ready for others to see it.
 
 ### 5. Optional: visit counting
 
-To see how many people visit: in Vercel open **Analytics** and enable **Web Analytics**, then on your site go to **Settings → App → Website** and turn on **Offer visitors Vercel Web Analytics**. Visitors are then asked first, and it only runs for those who say yes.
+In Vercel open **Analytics** and enable **Web Analytics**, then add the `WEB_ANALYTICS` setting with the value `1` and redeploy. Visitors are then asked first, and it only runs for those who say yes.
 
 ### 6. Optional: your own domain
 
 In Vercel: **Settings → Domains**. HTTPS is set up automatically.
 
+## Dealing with reports
+
+Every public page has a **Report this page** link, which opens an email to the business address on the contact page. To act on a report:
+
+1. Go to `/admin` and sign in with your `ADMIN_PASSWORD`.
+2. Look up the username (you can paste the page's address).
+3. **Suspend** hides the page from everyone and stops the owner changing it, but they can still sign in, download their data and delete the account. Add a short reason; the owner sees it. **Lift suspension** undoes it. **Delete account** removes it for good.
+
+The contact page promises a reply within 7 days, and to complaints and appeals within 14 days. Keep to that, or change the contact page.
+
 ## For OBS
 
-Add a *Browser* source with your site's address followed by `/?overlay` (for example `https://your-site.vercel.app/?overlay`). The same extras as on your PC work, such as `&counter=<id>`, `&layout=grid` and `&bg=show` (Settings → Stream builds the address).
+Each person's overlay address is their page address followed by `?overlay` (for example `https://your-site.vercel.app/u/yourname?overlay`), and **Settings → Stream** builds it. The page has to be public for OBS to show it, because OBS isn't signed in.
 
 ## Free plan limits
 
-- **Upstash:** the free database allows 500,000 commands a month. With visitors around the clock the site uses roughly 300,000; with fewer visitors, less, because it only checks the platforms while someone is looking. You can see usage in the Upstash dashboard.
-- **Vercel Hobby:** shared numbers are cached on Vercel's network for 30 seconds, so lots of visitors cost about the same as one.
-- **Uploads:** a background picture up to 3 MB and a tick sound up to 2 MB.
+- **Upstash:** the free database allows 500,000 commands a month. A page that's open uses about 1 to 2 commands a minute, plus about 4 a minute shared by everyone for reading the platforms. That's roughly enough for 4 or 5 pages kept open around the clock, or many more that are only open while their owners are streaming. Public pages are cached on Vercel's network for a minute, so lots of visitors to one page cost about the same as one. Check usage in the Upstash dashboard. If it gets close to the limit, set `SIGNUPS` to `closed`, lower `MAX_USERS`, or move to a paid Upstash plan.
+- **Vercel Hobby:** comfortably enough for this at small scale, and only for non-commercial use.
+- **Unused accounts:** an account whose page isn't opened for 12 months is deleted automatically, as the privacy policy says.
 
 ## Before you share the link
 
 - Set `OWNER_NAME`, so the legal pages say who runs the site.
-- Only add accounts that are yours or that you have permission to show.
+- Sign up for your own username first.
+- **ICO data protection fee:** the site keeps accounts (usernames and password hashes), so check whether you need to pay the fee using the ICO's short self-assessment on its website. Some non-commercial sites are exempt, but check.
+- **Online Safety Act:** people can make pages that others see, so the site may count as a user-to-user service. Ofcom has an online tool to check whether the rules apply. If they do, you need to write down an illegal content risk assessment and a children's access assessment (Ofcom publishes guidance and templates), and keep the reporting and complaints routes on the contact page working. The site already has those routes, no uploads, no messaging, pages that are private by default, and a way for you to suspend or remove pages.
 - If the site is for a business: use Vercel Pro, and the UK's E-Commerce Regulations also require your business name, a geographic (postal) address and your email on the site, plus your company and VAT numbers if you have them. Add those to the footer and legal pages.
-- Check whether you need to pay the ICO's data protection fee: the ICO has a short self-assessment on its website. Many small non-commercial sites are exempt, but check.
-- Keep the promises in the privacy policy: reply to privacy requests within one month, acknowledge complaints within 30 days, and delete old emails within 12 months.
-- If you change what the site collects or which services it uses, update the policies and their dates.
+- Keep the promises in the privacy policy: reply to privacy requests within one month, and delete old emails as it says.
+- If you change what the site collects or which services it uses, update the policies and their dates. If you change the terms in a way that matters, change `TERMS_VERSION` in `api/index.js` and the version on the terms page.
 
-This guide and the legal pages are a careful starting point, not legal advice. If the site becomes a business, it's worth having a solicitor look over them.
+This guide and the legal pages are a careful starting point, not legal advice. If the site becomes a business or grows large, it's worth having a solicitor look over them.

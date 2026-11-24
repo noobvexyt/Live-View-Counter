@@ -1,9 +1,10 @@
 /* Website version only (the local app never turns this on): privacy choices (the cookie banner),
-   the legal links along the bottom, and the site owner's sign-in.
+   the header and footer links that change when you're signed in, and signing out. Used on every page.
 
    Nothing optional loads until the visitor allows it:
-   - fonts: the counter's typeface from Google Fonts (Google receives the visitor's IP address);
-   - analytics: Vercel Web Analytics, and only if the owner has turned it on in Settings → App. */
+   - fonts: the counter's typeface from Google Fonts (Google receives the visitor's IP address). Only
+     counter pages use them, so only they ask straight away;
+   - analytics: Vercel Web Analytics, and only if the site has it turned on (WEB_ANALYTICS in Vercel). */
 (function () {
   'use strict';
 
@@ -15,11 +16,10 @@
 
   let hosted = false;
   let overlay = false;
-  let admin = false;
-  let config = {};
-  let analyticsOffered = false; // the owner has turned on Vercel Web Analytics
-  let settingsSeen = false;
+  let usesFonts = false;
+  let analyticsOffered = false;
   let analyticsLoaded = false;
+  let config = {};
   let choice = loadChoice();
   const listeners = [];
 
@@ -51,7 +51,7 @@
     try { localStorage.setItem(KEY, JSON.stringify(choice)); } catch (e) { /* remembered for this visit only */ }
     closeBanner();
     // Taking permission back: reload, so whatever was already loaded stops.
-    if ((hadFonts && !allows('fonts')) || (analyticsLoaded && !allows('analytics'))) {
+    if ((hadFonts && usesFonts && !allows('fonts')) || (analyticsLoaded && !allows('analytics'))) {
       location.reload();
       return;
     }
@@ -71,12 +71,42 @@
 
   function needsAsking() {
     if (!hosted || overlay) return false;
-    if (!choice) return true;
+    if (!choice) return usesFonts || analyticsOffered;
     return analyticsOffered && typeof choice.analytics !== 'boolean';
+  }
+
+  // The banner's markup. The counter page has it in its HTML; other pages get it from here.
+  function ensureBanner() {
+    if ($('consent')) return;
+    const box = document.createElement('section');
+    box.id = 'consent';
+    box.className = 'consent';
+    box.hidden = true;
+    box.setAttribute('aria-labelledby', 'consent-title');
+    // Fixed text only (never anything a user typed).
+    box.innerHTML = `
+      <h2 id="consent-title">Your privacy choices</h2>
+      <p>This site only stores what it needs to work, like the choices you make here. With your permission it can also:</p>
+      <label class="check">
+        <input id="consent-fonts" type="checkbox">
+        <span><b>Load fonts from Google Fonts on counter pages.</b> Google receives your IP address and browser details. Without this, counters use a similar font from your device.</span>
+      </label>
+      <label id="consent-analytics-row" class="check" hidden>
+        <input id="consent-analytics" type="checkbox">
+        <span><b>Count visits with Vercel Web Analytics.</b> No cookies. It records the page, the site you came from, your country, and your type of device, browser and operating system.</span>
+      </label>
+      <div class="consent-actions">
+        <button id="consent-reject" class="ghost" type="button">Reject all</button>
+        <button id="consent-save" class="ghost" type="button">Save choices</button>
+        <button id="consent-accept" class="ghost" type="button">Accept all</button>
+      </div>
+      <p class="consent-links"><a href="/cookies">Cookie policy</a> · <a href="/privacy">Privacy policy</a> · You can change these choices any time with “Cookie settings” at the bottom of the page.</p>`;
+    document.body.appendChild(box);
   }
 
   function openBanner(focus) {
     if (!hosted || overlay) return;
+    ensureBanner();
     $('consent-analytics-row').hidden = !analyticsOffered;
     $('consent-fonts').checked = allows('fonts');
     $('consent-analytics').checked = allows('analytics');
@@ -84,115 +114,99 @@
     if (focus) $('consent-reject').focus();
   }
   function closeBanner() {
-    $('consent').hidden = true;
+    if ($('consent')) $('consent').hidden = true;
   }
 
-  // Called whenever the owner's settings arrive or change: they say whether analytics is on.
-  function setOwnerSettings(S) {
-    if (!hosted) return;
-    const on = Boolean(S && S.privacy && S.privacy.analytics);
-    const first = !settingsSeen;
-    settingsSeen = true;
-    if (!first && on === analyticsOffered) return;
-    analyticsOffered = on;
-    if (needsAsking()) openBanner(false);
-    else if (!$('consent').hidden) $('consent-analytics-row').hidden = !analyticsOffered;
-    if (allows('analytics')) loadAnalytics();
-  }
-
-  // ---------- the owner's sign-in ----------
-  async function post(url, body) {
+  async function signOut(to) {
     try {
-      const r = await fetch(url, {
-        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}),
-      });
-      return await r.json();
-    } catch (e) {
-      return { ok: false, error: { message: 'Couldn’t reach the website. Check your connection and try again.' } };
+      await fetch('/api/auth/signout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    } catch (e) { /* the cookie ends by itself */ }
+    location.href = to || '/';
+  }
+
+  // Header and footer bits that depend on whether someone is signed in.
+  function applyUser() {
+    const user = config.user || null;
+    for (const el of document.querySelectorAll('[data-when-user]')) el.hidden = !user;
+    for (const el of document.querySelectorAll('[data-when-guest]')) el.hidden = Boolean(user);
+    for (const el of document.querySelectorAll('[data-when-moderator]')) el.hidden = !config.moderator;
+    if (user) {
+      for (const el of document.querySelectorAll('[data-user-page]')) el.setAttribute('href', user.page);
+      for (const el of document.querySelectorAll('[data-user-name]')) el.textContent = user.name;
+    }
+    const owner = typeof config.owner === 'string' ? config.owner.trim() : '';
+    if (owner) for (const el of document.querySelectorAll('[data-owner]')) el.textContent = owner;
+    const here = location.pathname.replace(/\.html$/, '').replace(/\/index$/, '/') || '/';
+    for (const a of document.querySelectorAll('.head-nav a')) {
+      if (a.getAttribute('href') === here) a.setAttribute('aria-current', 'page');
     }
   }
 
-  function openSignIn() {
-    let problem = '';
-    if (!config.signIn) problem = 'Owner sign-in isn’t set up yet. The site owner needs to add an ADMIN_PASSWORD (at least 12 characters) in Vercel → Settings → Environment Variables, then redeploy.';
-    else if (!config.db) problem = 'No database is connected yet, so changes can’t be saved. The site owner needs to connect an Upstash Redis database in Vercel → Storage, then redeploy.';
-    $('owner-setup').textContent = problem;
-    $('owner-setup').hidden = !problem;
-    $('owner-error').hidden = true;
-    $('owner-password').value = '';
-    $('owner-password').classList.remove('invalid');
-    $('owner-dialog').showModal();
-    $('owner-password').focus();
-  }
-
-  async function signOut() {
-    await post('/api/admin/logout', {});
-    location.reload();
-  }
-
   function wire() {
+    ensureBanner();
     $('consent-reject').addEventListener('click', () => decide({ fonts: false, analytics: false }));
     $('consent-accept').addEventListener('click', () => decide({ fonts: true, analytics: true }));
     $('consent-save').addEventListener('click', () => decide({ fonts: $('consent-fonts').checked, analytics: $('consent-analytics').checked }));
-    $('btn-cookie-settings').addEventListener('click', () => openBanner(true));
-
-    const ownerBtn = $('btn-owner');
-    ownerBtn.textContent = admin ? 'Sign out' : 'Owner sign-in';
-    ownerBtn.addEventListener('click', () => (admin ? signOut() : openSignIn()));
-    $('btn-owner-cancel').addEventListener('click', () => $('owner-dialog').close());
-    $('owner-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const input = $('owner-password');
-      const err = $('owner-error');
-      err.hidden = true;
-      if (!input.value) {
-        err.textContent = 'Enter the password.';
-        err.hidden = false;
-        input.focus();
-        return;
-      }
-      const btn = $('btn-owner-signin');
-      btn.disabled = true;
-      const res = await post('/api/admin/login', { password: input.value });
-      btn.disabled = false;
-      if (res.ok) {
-        location.reload();
-        return;
-      }
-      err.textContent = (res.error && res.error.message) || 'Couldn’t sign in.';
-      err.hidden = false;
-      input.classList.toggle('invalid', Boolean(res.error && res.error.field === 'password'));
-      input.select();
-    });
-
+    for (const el of document.querySelectorAll('[data-cookie-settings]')) {
+      el.addEventListener('click', (e) => { e.preventDefault(); openBanner(true); });
+    }
+    for (const el of document.querySelectorAll('[data-signout]')) {
+      el.addEventListener('click', (e) => { e.preventDefault(); signOut('/signin?out=1'); });
+    }
+    // The counter page's links bar sits over the page, so the page needs to know its height.
     const foot = $('site-footer');
-    foot.hidden = false;
-    const measure = () => document.documentElement.style.setProperty('--foot', `${foot.offsetHeight}px`);
-    measure();
-    if (window.ResizeObserver) new ResizeObserver(measure).observe(foot);
+    if (foot) {
+      foot.hidden = false;
+      const measure = () => document.documentElement.style.setProperty('--foot', `${foot.offsetHeight}px`);
+      measure();
+      if (window.ResizeObserver) new ResizeObserver(measure).observe(foot);
+    }
   }
 
   // cfg: what /api/config said. Only the website version answers with hosted: true.
+  // opts.overlay: OBS (no links, no banner, nothing optional). opts.fonts: this page uses Google Fonts.
   function init(cfg, opts) {
     hosted = Boolean(cfg && cfg.hosted === true);
     if (!hosted) return;
     config = cfg;
     overlay = Boolean(opts && opts.overlay);
-    admin = cfg.admin === true;
+    usesFonts = Boolean(opts && opts.fonts);
+    analyticsOffered = Boolean(cfg.analytics);
     const root = document.documentElement.classList;
     root.add('hosted');
-    root.toggle('admin', admin);
-    if (overlay) return; // OBS: no footer and no banner, so nothing optional ever loads there
+    root.toggle('signed-in', Boolean(cfg.user));
+    if (overlay) return;
+    applyUser();
     wire();
     if (new URLSearchParams(location.search).has('cookies')) openBanner(true);
+    else if (needsAsking()) openBanner(false);
+    if (allows('analytics')) loadAnalytics();
+  }
+
+  // Pages other than the counter (which starts this itself, in app.js) ask for the config here.
+  let resolveReady;
+  const ready = new Promise((r) => { resolveReady = r; });
+  async function boot() {
+    let cfg = null;
+    try {
+      const r = await fetch('/api/config', { cache: 'no-store', credentials: 'same-origin' });
+      if (r.ok) cfg = await r.json();
+    } catch (e) { /* offline: the page says so when it needs the site */ }
+    const known = Boolean(cfg && typeof cfg === 'object');
+    if (!known) cfg = { hosted: true, offline: true, user: null };
+    init(cfg, {});
+    resolveReady(cfg);
   }
 
   L.site = {
     init,
     allows,
     onChange: (fn) => listeners.push(fn),
-    setOwnerSettings,
     openBanner,
     signOut,
+    ready,
+    get config() { return config; },
   };
+
+  if (document.body && document.body.dataset.page) boot();
 })();

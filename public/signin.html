@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · Live View Counter</title>
+  <meta name="description" content="Sign in to your Live View Counter page.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0f0f0f">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/site.css">
+</head>
+<body data-page="signin">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-head">
+    <div class="wrap head-row">
+      <a class="brand" href="/"><img src="/favicon.svg" alt="" width="28" height="28">Live View Counter</a>
+      <nav class="head-nav" aria-label="Main">
+        <a class="btn small" href="/signup" data-when-guest>Sign up free</a>
+        <a href="/account" data-user-page data-when-user hidden>My page</a>
+        <a href="/account" data-when-user hidden>Account</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="wrap thin">
+      <section class="panel" aria-labelledby="signin-title">
+        <h1 id="signin-title">Sign in</h1>
+        <p id="out-note" class="notice good" role="status" hidden>You’re signed out.</p>
+        <p id="deleted-note" class="notice good" role="status" hidden>Your account and everything in it have been deleted.</p>
+        <p id="next-note" class="notice" hidden>Sign in to carry on.</p>
+        <p id="signed-in-note" class="notice" hidden>You’re signed in as <b data-user-name></b>. <a href="/account" data-user-page>Open your page</a>, or sign in below as someone else.</p>
+
+        <form id="signin-form" class="form" novalidate>
+          <div class="field">
+            <label class="field-label" for="si-username">Username</label>
+            <input id="si-username" name="username" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="40" required>
+          </div>
+          <div class="field">
+            <label class="field-label" for="si-password">Password</label>
+            <div class="pw-row">
+              <input id="si-password" name="password" type="password" autocomplete="current-password" maxlength="200" required>
+              <button class="btn ghost small" type="button" data-toggle-pw="si-password" aria-controls="si-password">Show</button>
+            </div>
+            <span class="caps" data-caps-for="si-password" hidden>Caps Lock is on.</span>
+          </div>
+          <label class="check"><input id="si-remember" type="checkbox"><span>Keep me signed in on this device for 30 days</span></label>
+          <p id="signin-error" class="form-error" role="alert" hidden></p>
+          <button id="btn-signin" class="btn" type="submit">Sign in</button>
+        </form>
+        <p class="fine mt-m"><a href="/forgot">Forgotten your password?</a> · New here? <a href="/signup">Make your page</a>.</p>
+        <p class="fine">Signing in stores one cookie that’s needed to keep you signed in. See the <a href="/cookies">Cookie policy</a>.</p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <nav aria-label="Site">
+        <a href="/">Home</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/cookies">Cookies</a>
+        <button type="button" data-cookie-settings>Cookie settings</button>
+        <a href="/contact">Contact and reports</a>
+      </nav>
+      <p>Live View Counter is run by <span data-owner>NoobVex</span> in the United Kingdom. Not affiliated with or endorsed by YouTube, Google or Bluesky.</p>
+    </div>
+  </footer>
+
+  <script src="/site.js"></script>
+  <script src="/pages.js"></script>
+</body>
+</html>

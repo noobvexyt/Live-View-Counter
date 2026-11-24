@@ -5,8 +5,10 @@
    Two modes, decided by /api/config:
    - the local app (server.js on the owner's computer): live updates over Server-Sent Events, and the
      YouTube views count rolls on between readings at the measured pace;
-   - the website version (api/index.js on Vercel): checks /api/state every 20 seconds and shows each
-     platform's official numbers only, with no estimates. Only the signed-in owner can change settings. */
+   - the website version (api/index.js on Vercel): each account has a page at /u/<username>. It checks
+     for new numbers every 20 to 30 seconds and shows each platform's official numbers only, with no
+     estimates. Only the page's owner, signed in, can change it; everyone else just watches (and only
+     if the owner has made the page public). */
 (function () {
   'use strict';
 
@@ -23,9 +25,14 @@
 
   // Website version or local app? Known once /api/config answers (see boot() at the bottom).
   let HOSTED = false;
-  let ADMIN = false;
+  let OWN = false;   // website: this is the signed-in person's own page
+  let PAGE = '';     // website: whose page this is (from the address, /u/<name>)
   let CFG = {};
-  const canEdit = () => !HOSTED || ADMIN;
+  const suspended = () => Boolean(CFG.user && CFG.user.suspended);
+  const canEdit = () => !HOSTED || (OWN && !suspended());
+  // The website's account API lives under /api/me/; the local app's is directly under /api/.
+  const api = (path) => (HOSTED ? `/api/me/${path}` : `/api/${path}`);
+  const signInUrl = () => `/signin?next=${encodeURIComponent(location.pathname)}`;
 
   // ---------- settings (shared by every browser and OBS; saved on the server) ----------
   let user = {};                       // what has been changed from the defaults
@@ -81,11 +88,11 @@
     if (!canEdit()) return;
     clearTimeout(saveTimer);
     setSaveState('Saving…');
-    saveTimer = setTimeout(save, 350);
+    saveTimer = setTimeout(save, HOSTED ? 800 : 350); // (the website's database counts every save)
   }
 
   async function save() {
-    const res = await postJson('/api/settings', { settings: user });
+    const res = await postJson(api('settings'), { settings: user });
     if (res.ok) {
       rev = Math.max(rev, res.rev || 0);
       if (Array.isArray(res.counters) && JSON.stringify(res.counters) !== JSON.stringify(user.counters || null) && user.counters) {
@@ -180,30 +187,86 @@
     };
   }
 
-  // Website: ask every 20 seconds (once a minute while the tab is hidden). The answer can come from
-  // Vercel's cache, so many visitors cost about the same as one.
+  // Website: ask every 20 seconds (once a minute while the tab is hidden). Visitors' answers can come
+  // from Vercel's cache, so many visitors cost about the same as one. The owner's own page is never
+  // cached (so changes show straight away); it asks every 30 seconds, as numbers change once a minute.
   let pollTimer = 0;
   let pollFails = 0;
   let polling = false;
   let lastPoll = 0;
+  let missing = false; // website: this page is private or doesn't exist
   async function poll() {
     if (polling) return;
     polling = true;
     clearTimeout(pollTimer);
     lastPoll = Date.now();
     try {
-      const r = await fetch('/api/state');
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const s = await r.json();
-      pollFails = 0;
-      if (lost) { lost = false; renderStatus(); renderBanner(); }
-      applySnapshot(s);
+      const r = OWN
+        ? await fetch('/api/me/state', { cache: 'no-store', credentials: 'same-origin' })
+        : await fetch(`/api/u/${encodeURIComponent(PAGE)}/state`, { credentials: 'omit' });
+      if (OWN && r.status === 401) { location.replace(signInUrl()); return; }
+      if (!OWN && r.status === 404) {
+        pollFails = 0;
+        if (lost) { lost = false; renderStatus(); renderBanner(); }
+        showMissing();
+      } else {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const s = await r.json();
+        pollFails = 0;
+        if (lost) { lost = false; renderStatus(); renderBanner(); }
+        if (missing) {
+          missing = false;
+          $('controls').hidden = OVERLAY;
+          if (HOSTED && !OWN && !OVERLAY) $('report-link').hidden = false;
+          renderEmpty();
+        }
+        applySnapshot(s);
+      }
     } catch (e) {
       pollFails++;
       if (pollFails >= 2 && !lost) { lost = true; renderStatus(); renderBanner(); }
     }
     polling = false;
-    pollTimer = setTimeout(poll, document.hidden ? 60_000 : pollFails ? Math.min(60_000, 10_000 * pollFails) : 20_000);
+    const every = missing ? 60_000 : OWN ? 30_000 : 20_000;
+    pollTimer = setTimeout(poll, document.hidden ? 60_000 : pollFails ? Math.min(60_000, 10_000 * pollFails) : every);
+  }
+
+  // A visitor opened a page that's private, suspended or doesn't exist. (It's checked again now and
+  // then, in case the owner makes it public.)
+  function showMissing() {
+    if (!missing) {
+      missing = true;
+      snap = null;
+      for (const card of cards.values()) card.destroy();
+      cards.clear();
+      order = [];
+      activeId = null;
+      applyLayout();
+    }
+    if (!settingsReady) { settingsReady = true; applySettings(); }
+    show('counter');
+    $('controls').hidden = true; // nothing to play or enlarge
+    if ($('report-link')) $('report-link').hidden = true;
+    refreshSoundUi();
+    renderEmpty();
+    renderStatus();
+    renderBanner();
+    document.title = 'Nothing to see here · Live View Counter';
+  }
+
+  // The message shown when there are no counters on screen.
+  function renderEmpty() {
+    const box = $('empty');
+    const text = $('empty-text');
+    if (missing) {
+      text.textContent = OVERLAY
+        ? 'Nothing to show. If this is your page, make it public on your account page to use it in OBS.'
+        : 'There’s nothing to see here. This page may be private, or the account may not exist.';
+    } else {
+      text.textContent = 'No counters to show yet.';
+    }
+    $('empty-links').hidden = !HOSTED || OVERLAY || canEdit();
+    box.hidden = !missing && (order.length > 0 || view !== 'counter');
   }
   document.addEventListener('visibilitychange', () => {
     if (HOSTED && !document.hidden && Date.now() - lastPoll > 10_000) poll();
@@ -412,7 +475,7 @@
       if (!src) return { ready: false, status: 'starting', name: c.handle };
       const m = src.metrics && src.metrics[c.metric];
       let note = '';
-      if (src.error && HOSTED && !ADMIN) note = m ? 'Couldn’t get the latest number, so this is the last one we got. Trying again soon.' : 'Couldn’t get this number right now. Trying again soon.';
+      if (src.error && HOSTED && !canEdit()) note = m ? 'Couldn’t get the latest number, so this is the last one we got. Trying again soon.' : 'Couldn’t get this number right now. Trying again soon.';
       else if (src.error) note = `${src.error.message}${src.status === 'offline' && src.error.retryAt ? ` Trying again ${until(src.error.retryAt)}.` : ''}`;
       else if (c.metric === 'viewers' && !src.live) note = 'Not live right now.';
       return {
@@ -626,7 +689,7 @@
     }
 
     async loadHistory(force) {
-      if (!S.look.chart || this.id == null || this.officialOnly()) return;
+      if (HOSTED || !S.look.chart || this.id == null) return; // (the website keeps no history)
       const now = Date.now();
       if (!force && now - this.historyAt < 60_000) return;
       this.historyAt = now;
@@ -639,7 +702,7 @@
     }
 
     drawChart() {
-      const showIt = S.look.chart && this.history.length >= 2 && this.lastInt != null;
+      const showIt = !HOSTED && S.look.chart && this.history.length >= 2 && this.lastInt != null;
       this.chart.hidden = !showIt;
       if (!showIt) return;
       const c = this.chart;
@@ -722,7 +785,7 @@
     if (!ids.includes(activeId)) activeId = ids[0] || null;
     if (changed) applyLayout();
     for (const card of cards.values()) card.update();
-    $('empty').hidden = ids.length > 0 || view !== 'counter';
+    renderEmpty();
   }
 
   function gridCols(n) {
@@ -916,9 +979,9 @@
   const safeColor = (c, d) => (/^#[0-9a-f]{6}$/i.test(String(c)) ? c : d);
 
   function backgroundUrl() {
+    if (HOSTED) return ''; // the website has no background pictures, so visitors never load other sites
     const v = String(S.look.bgImage || '').trim();
     if (v.startsWith('upload:')) return `/api/files/background?v=${encodeURIComponent(v.slice(7))}`;
-    if (HOSTED) return ''; // the website only shows uploaded pictures, so visitors never load other sites
     try {
       const u = new URL(v);
       return u.protocol === 'https:' || u.protocol === 'http:' ? u.href : '';
@@ -954,7 +1017,6 @@
     const font = L.FONTS.find((f) => f.name === t.font) || L.FONTS[0];
     loadFont(UI_FONT);
     loadFont(font);
-    if (L.site && settingsReady) L.site.setOwnerSettings(S); // the owner's settings say whether analytics is on
     const family = font.system ? font.css : `"${font.name}", ${/Mono|Press Start/.test(font.name) ? 'monospace' : 'sans-serif'}`;
     root.setProperty('--num-font', family);
     root.setProperty('--num-weight', String(nearest(font.weights, t.weight)));
@@ -1075,8 +1137,13 @@
     const s = snap;
     const err = (s && s.error) || {};
     const ytShown = order.some((id) => cards.get(id) && cards.get(id).cfg.platform === 'youtube');
-    const visitor = HOSTED && !ADMIN; // website visitors get plain messages; the owner gets the details
-    if (stopped) {
+    const visitor = !canEdit(); // website visitors get plain messages; the owner gets the details
+    if (HOSTED && OWN && suspended()) {
+      text = 'Your account is suspended, so your page is hidden from everyone else and can’t be changed. To ask about it, email noobvexbusiness@gmail.com.';
+      tone = 'error';
+    } else if (missing) {
+      text = '';
+    } else if (stopped) {
       text = 'The counter is stopped. Start it again with the “Live View Counter” icon on your desktop.';
       tone = 'warn';
     } else if (lost) {
@@ -1126,7 +1193,7 @@
     btn.classList.toggle('muted', !sound.on);
     btn.setAttribute('aria-pressed', String(sound.on));
     btn.title = sound.on ? 'Sound on (M)' : 'Sound off (M)';
-    $('sound-hint').hidden = !sound.blocked || view !== 'counter' || OVERLAY;
+    $('sound-hint').hidden = !sound.blocked || view !== 'counter' || OVERLAY || missing;
     sound.active = view === 'counter';
     if ($('sound-on')) $('sound-on').checked = sound.on;
   }
@@ -1151,8 +1218,11 @@
 
   async function postJson(url, body) {
     try {
-      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
-      return await r.json();
+      const r = await fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+      const j = await r.json();
+      // Website: signed out (on another device, or the sign-in ran out). Sign in again, then come back.
+      if (HOSTED && r.status === 401 && j && j.error && j.error.signIn) location.replace(signInUrl());
+      return j;
     } catch (e) {
       return {
         ok: false,
@@ -1188,19 +1258,15 @@
   $('setup-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = $('btn-connect');
-    const inputs = { channel: $('in-channel'), apiKey: $('in-key'), agree: $('in-agree') };
-    const body = { channel: inputs.channel.value.trim(), apiKey: inputs.apiKey.value.trim() };
-    const keyNeeded = !(HOSTED && CFG.envKey); // the website can use a key set in Vercel instead
+    const inputs = { channel: $('in-channel'), apiKey: $('in-key') };
+    const body = { channel: inputs.channel.value.trim() };
+    if (!HOSTED) body.apiKey = inputs.apiKey.value.trim(); // the website uses its own key
     $('setup-error').hidden = true;
     if (!body.channel) return showError($('setup-error'), { field: 'channel', message: 'Enter your channel’s @handle or a link to it.' }, inputs);
-    if (keyNeeded && !body.apiKey) return showError($('setup-error'), { field: 'apiKey', message: 'Paste your YouTube Data API key. The steps below show how to get one.' }, inputs);
-    if (HOSTED) {
-      if (!inputs.agree.checked) return showError($('setup-error'), { field: 'agree', message: 'Tick the box to agree to the terms first.' }, inputs);
-      body.agree = true;
-    }
+    if (!HOSTED && !body.apiKey) return showError($('setup-error'), { field: 'apiKey', message: 'Paste your YouTube Data API key. The steps below show how to get one.' }, inputs);
     btn.disabled = true;
     btn.textContent = 'Checking with YouTube…';
-    const res = await postJson('/api/connect', body);
+    const res = await postJson(api('connect'), body);
     btn.disabled = false;
     btn.textContent = 'Start counting';
     if (!res.ok) return showError($('setup-error'), res.error || {}, inputs);
@@ -1277,8 +1343,11 @@
     get order() { return order.slice(); },
     get overlay() { return OVERLAY; },
     get hosted() { return HOSTED; },
-    get admin() { return ADMIN; },
+    get admin() { return canEdit(); },
+    get own() { return OWN; },
+    get page() { return PAGE; },
     get config() { return CFG; },
+    api,
     cards,
     sound,
     fx,
@@ -1329,10 +1398,26 @@
     if (lost) { lost = false; renderBanner(); }
     CFG = cfg;
     HOSTED = cfg.hosted === true;
-    ADMIN = HOSTED && cfg.admin === true;
-    if (HOSTED && cfg.envKey) $('in-key-field').hidden = true; // using the key set in Vercel
+    if (HOSTED) {
+      // Whose page is this? /u/<username>. Anything else goes to your own page, or the home page.
+      const m = location.pathname.match(/^\/u\/([A-Za-z0-9_-]{3,24})\/?$/);
+      if (!m) {
+        location.replace(cfg.user && cfg.user.page ? cfg.user.page : '/');
+        return;
+      }
+      PAGE = m[1].toLowerCase();
+      if (location.pathname !== `/u/${PAGE}`) history.replaceState(null, '', `/u/${PAGE}${location.search}${location.hash}`);
+      OWN = Boolean(cfg.user && cfg.user.name === PAGE);
+      $('in-key-field').hidden = true; // the website uses its own key
+      document.documentElement.classList.toggle('admin', canEdit());
+      if (!OWN && !OVERLAY) {
+        const report = $('report-link');
+        report.href = `mailto:noobvexbusiness@gmail.com?subject=${encodeURIComponent(`Report: page /u/${PAGE}`)}`;
+        report.hidden = false;
+      }
+    }
     if (L.site) {
-      L.site.init(cfg, { overlay: OVERLAY });
+      L.site.init(cfg, { overlay: OVERLAY, fonts: true });
       L.site.onChange(applySettings); // e.g. fonts allowed: load them now
     }
     applySettings();

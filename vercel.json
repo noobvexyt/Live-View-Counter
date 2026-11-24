@@ -6,7 +6,19 @@
     "api/index.js": { "maxDuration": 30 }
   },
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/index?__path=:path*" }
+    { "source": "/api/:path*", "destination": "/api/index?__path=:path*" },
+    { "source": "/robots.txt", "destination": "/api/index?__path=robots" },
+    { "source": "/sitemap.xml", "destination": "/api/index?__path=sitemap" },
+    { "source": "/u/:name", "destination": "/live.html" },
+    { "source": "/signup", "destination": "/signup.html" },
+    { "source": "/signin", "destination": "/signin.html" },
+    { "source": "/forgot", "destination": "/forgot.html" },
+    { "source": "/account", "destination": "/account.html" },
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/contact", "destination": "/contact.html" },
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/terms", "destination": "/terms.html" },
+    { "source": "/cookies", "destination": "/cookies.html" }
   ],
   "headers": [
     {
@@ -18,6 +30,14 @@
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()" },
         { "key": "X-Frame-Options", "value": "DENY" }
       ]
-    }
+    },
+    { "source": "/u/:name*", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/live.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/account", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/account.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/admin", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/admin.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/forgot", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/forgot.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }
   ]
 }

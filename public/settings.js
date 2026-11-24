@@ -99,18 +99,20 @@
     platformBox.appendChild(lab);
   }
 
-  // ---------- website version: fewer platforms, owner-only extras ----------
+  // ---------- website version: fewer platforms, no uploads, no API keys ----------
   let modeApplied = false;
   function applyMode() {
     if (modeApplied) return;
     modeApplied = true;
     if (!A.hosted) return;
-    const allowed = (A.config && A.config.platforms) || ['youtube', 'bluesky', 'instagram'];
+    const allowed = (A.config && A.config.platforms) || ['youtube', 'bluesky'];
     for (const input of platformBox.querySelectorAll('input')) input.closest('label').hidden = !allowed.includes(input.value);
     if (!allowed.includes(addPlatform)) setAddPlatform(allowed.find((p) => p !== 'youtube') || allowed[0]);
-    const envKey = Boolean(A.config && A.config.envKey);
-    $('set-key-field').hidden = envKey;
-    $('set-key-env').hidden = !envKey;
+    $('set-key-field').hidden = true; // the website uses its own key
+    $('set-key-env').hidden = true;
+    // No uploaded sounds on the website.
+    const custom = $('tick-grid').querySelector('input[value="custom"]');
+    if (custom) custom.closest('.snd').hidden = true;
   }
   if (L.site) L.site.onChange(() => { if (dlg.open && tab === 'text') loadFontPreviews(); });
 
@@ -464,7 +466,7 @@
       if (addPlatform !== 'instagram' && !body.handle) return A.showError(errBox, { field: 'handle', message: 'Enter the account name or paste its link.' }, inputs);
       btn.disabled = true;
       btn.textContent = `Looking it up on ${L.PLATFORMS[addPlatform].name}…`;
-      const res = await A.postJson('/api/accounts/check', body);
+      const res = await A.postJson(A.api('accounts/check'), body);
       btn.disabled = false;
       btn.textContent = 'Add counter';
       if (!res.ok) return A.showError(errBox, res.error || {}, inputs);
@@ -580,7 +582,7 @@
     updateOverlayUrl();
   }
   function updateOverlayUrl() {
-    let url = `${location.origin}/?overlay`;
+    let url = A.hosted ? `${location.origin}/u/${A.page}?overlay` : `${location.origin}/?overlay`;
     if ($('ov-counter').value) url += `&counter=${encodeURIComponent($('ov-counter').value)}`;
     if ($('ov-style').value) url += `&style=${$('ov-style').value}`;
     if (!$('ov-transparent').checked) url += '&bg=show';
@@ -613,6 +615,13 @@
     }
     $('set-key').placeholder = c.keyHint ? `Saved key ${c.keyHint}` : 'Paste your API key';
     $('btn-disconnect').hidden = !c.configured;
+    if (A.hosted && c.user) {
+      const pub = Boolean(c.user.public);
+      $('page-visibility').textContent = pub
+        ? `Your page is public: anyone with the address ${location.origin}${c.user.page} can see it.`
+        : 'Your page is private: only you can see it, while signed in. You can make it public on your account page.';
+      $('ov-private').hidden = pub;
+    }
   }
 
   function renderFacts() {
@@ -641,17 +650,14 @@
 
   $('settings-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const inputs = { channel: $('set-channel'), apiKey: $('set-key'), agree: $('set-agree') };
+    const inputs = { channel: $('set-channel'), apiKey: $('set-key') };
     const body = { channel: inputs.channel.value.trim() };
-    if (inputs.apiKey.value.trim()) body.apiKey = inputs.apiKey.value.trim();
-    if (A.hosted) {
-      if (!inputs.agree.checked) return A.showError($('settings-error'), { field: 'agree', message: 'Tick the box to agree to the terms first.' }, inputs);
-      body.agree = true;
-    }
+    if (!A.hosted && inputs.apiKey.value.trim()) body.apiKey = inputs.apiKey.value.trim();
+    if (A.hosted && !body.channel) return A.showError($('settings-error'), { field: 'channel', message: 'Enter your channel’s @handle or a link to it.' }, inputs);
     const btn = $('btn-save');
     btn.disabled = true;
     btn.textContent = 'Saving…';
-    const res = await A.postJson('/api/connect', body);
+    const res = await A.postJson(A.api('connect'), body);
     btn.disabled = false;
     btn.textContent = 'Save';
     if (!res.ok) return A.showError($('settings-error'), res.error || {}, inputs);
@@ -666,9 +672,9 @@
   });
 
   $('btn-disconnect').addEventListener('click', async () => {
-    const where = A.hosted ? 'the channel and saved API key from this website’s database' : 'the saved API key from this computer';
+    const where = A.hosted ? 'your channel from your page' : 'the saved API key from this computer';
     if (!window.confirm(`Disconnect YouTube? This removes ${where}. Your other counters keep going, and you can connect again any time.`)) return;
-    const res = await A.postJson('/api/disconnect');
+    const res = await A.postJson(A.api('disconnect'));
     if (!res.ok) return A.showError($('settings-error'), res.error || {}, {});
     if (res.state) A.applySnapshot(res.state);
     loadConfig();

@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Live View Counter</title>
+  <meta name="description" content="Channel and profile numbers shown as big rolling counters.">
+  <meta name="robots" content="noindex">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0f0f0f">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div id="bg" class="bg" aria-hidden="true">
+    <div class="bg-image"></div>
+    <div class="aurora"><span></span><span></span><span></span></div>
+  </div>
+
+  <!-- The live counters -->
+  <main id="counter-view" class="counter-view" hidden>
+    <div id="cards" class="cards"></div>
+    <div id="empty" class="empty" hidden>
+      <p id="empty-text">No counters to show yet.</p>
+      <button id="btn-empty-add" class="primary owner-only" type="button">Add a counter</button>
+      <p id="empty-links" class="empty-links" hidden><a href="/">Go to the home page</a></p>
+    </div>
+  </main>
+
+  <template id="card-tpl">
+    <article class="card">
+      <div class="card-inner">
+        <a class="avatar-link" target="_blank" rel="noopener noreferrer"><img class="avatar" alt=""></a>
+        <h1 class="channel-name">&nbsp;</h1>
+        <section class="count">
+          <div class="halo" aria-hidden="true"></div>
+          <div class="number" role="img"></div>
+          <p class="count-label"></p>
+        </section>
+        <p class="stats-line" hidden></p>
+        <div class="goal" hidden>
+          <div class="goal-bar"><span class="goal-fill"></span></div>
+          <div class="goal-text"><span class="goal-left"></span><span class="goal-pct"></span></div>
+        </div>
+        <canvas class="chart" hidden></canvas>
+        <p class="card-note" hidden></p>
+        <p class="card-source" hidden></p>
+      </div>
+    </article>
+  </template>
+
+  <nav id="pager" class="pager" aria-label="Switch counter" hidden>
+    <button id="btn-prev" class="icon-btn" type="button" aria-label="Previous counter" title="Previous (←)">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m15 5-7 7 7 7"/></svg>
+    </button>
+    <span id="dots" class="dots"></span>
+    <button id="btn-next" class="icon-btn" type="button" aria-label="Next counter" title="Next (→)">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m9 5 7 7-7 7"/></svg>
+    </button>
+  </nav>
+
+  <canvas id="fx" class="fx" aria-hidden="true"></canvas>
+  <div id="floaters" class="floaters" aria-hidden="true"></div>
+  <div id="milestone" class="milestone" role="status" hidden></div>
+
+  <div id="status" class="status starting" role="status" hidden>
+    <span class="status-dot" aria-hidden="true"></span>
+    <span id="status-text">Connecting</span>
+  </div>
+
+  <!-- First-time setup -->
+  <main id="setup-view" class="setup-view" hidden>
+    <div class="setup-card">
+      <div class="brand"><img src="/favicon.svg" alt="" width="30" height="30"><span>Live View Counter</span></div>
+      <h1 class="local-only">Watch your channel’s views count up live</h1>
+      <p class="lede local-only">Connect your channel once. Then this page shows your total views, ticking up as new views come in.</p>
+      <h1 class="hosted-only">Show your channel’s numbers</h1>
+      <p class="lede hosted-only">Type your channel’s @handle. Your page then shows its official total views from YouTube, checked about once a minute. You can add subscribers, videos and Bluesky followers too.</p>
+
+      <form id="setup-form" class="form" novalidate>
+        <label class="field">
+          <span class="field-label">Your channel</span>
+          <input id="in-channel" type="text" placeholder="@yourhandle or your channel link" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <span class="field-hint">A link to any of your videos works too.</span>
+        </label>
+        <div id="in-key-field" class="field">
+          <label class="field-label" for="in-key">YouTube Data API key</label>
+          <div class="key-row">
+            <input id="in-key" type="password" placeholder="AIza…" autocomplete="off" autocapitalize="off" spellcheck="false">
+            <button type="button" class="ghost small" data-toggle-key="in-key">Show</button>
+          </div>
+          <span class="field-hint local-only">Free from Google. It’s saved only on this computer.</span>
+          <span class="field-hint hosted-only">Free from Google. It’s kept in this site’s private database, never shown on the page, and only used to read your channel’s public numbers.</span>
+        </div>
+        <p class="fine flush hosted-only">Only public channel numbers are read, using this site’s own YouTube API key. By connecting a channel you agree to <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">YouTube’s Terms of Service</a>. See the <a href="/privacy">Privacy policy</a> for how this works.</p>
+        <p id="setup-error" class="form-error" role="alert" hidden></p>
+        <button id="btn-connect" class="primary" type="submit">Start counting</button>
+      </form>
+      <button id="btn-skip-youtube" class="link-btn" type="button"><span class="local-only">Count TikTok, Twitch, Kick, Bluesky or Instagram instead</span><span class="hosted-only">Count Bluesky followers instead</span></button>
+      <p class="fine hosted-only setup-foot"><a href="/account">Your account</a> · <a href="/">Home</a></p>
+
+      <details class="guide local-only" open>
+        <summary>How to get your free API key (about 3 minutes)</summary>
+        <ol>
+          <li>Open <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener noreferrer">Google Cloud: new project</a> and sign in with your Google account. Name the project <b>Live View Counter</b> and click <b>Create</b>.</li>
+          <li>Open <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener noreferrer">YouTube Data API v3</a>. Make sure your new project is selected at the top of the page, then click <b>Enable</b>.</li>
+          <li>Open <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">Credentials</a>, click <b>+ Create credentials</b> and choose <b>API key</b>. Copy the key and paste it above.</li>
+          <li>Recommended: open the key’s settings. Under <b>API restrictions</b> choose <b>Restrict key</b>, tick <b>YouTube Data API v3</b> and click <b>Save</b>. Leave <b>Application restrictions</b> set to <b>None</b>.</li>
+        </ol>
+        <p class="fine local-only">No billing or card needed. Google gives every project a free daily allowance, and the counter paces itself to stay inside it, even if you leave it running all day.</p>
+        <p class="fine hosted-only">No billing or card needed. Google gives every project a free daily allowance of 10,000 units. This site checks your channel at most once a minute, which uses up to 1,440 units a day.</p>
+      </details>
+    </div>
+  </main>
+
+  <div id="banner" class="banner" role="status" hidden>
+    <span id="banner-text" class="banner-text"></span>
+    <span id="banner-actions" class="banner-actions"></span>
+  </div>
+
+  <button id="sound-hint" class="sound-hint" type="button" hidden>
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M4 9.5v5h3.5L12 19V5L7.5 9.5H4Z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M15.5 9a4.2 4.2 0 0 1 0 6"/></svg>
+    Click anywhere to turn on the tick sound
+  </button>
+
+  <nav id="controls" class="controls" aria-label="Counter controls" hidden>
+    <button id="btn-sound" class="icon-btn" type="button" title="Tick sound (M)" aria-label="Tick sound" aria-pressed="true">
+      <svg class="icon-on" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M4 9.5v5h3.5L12 19V5L7.5 9.5H4Z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M15.5 9a4.2 4.2 0 0 1 0 6M18.2 6.5a7.8 7.8 0 0 1 0 11"/></svg>
+      <svg class="icon-off" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M4 9.5v5h3.5L12 19V5L7.5 9.5H4Z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="m16 9.5 5 5m0-5-5 5"/></svg>
+    </button>
+    <button id="btn-settings" class="icon-btn owner-only" type="button" title="Settings (S)" aria-label="Settings">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M19.4 13.5a7.7 7.7 0 0 0 0-3l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.5A7.6 7.6 0 0 0 7 6.5l-2.4-1-2 3.4 2 1.6a7.7 7.7 0 0 0 0 3l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a7.6 7.6 0 0 0 2.6-1.5l2.4 1 2-3.4-2-1.6Z"/></svg>
+    </button>
+    <button id="btn-fullscreen" class="icon-btn" type="button" title="Full screen (F)" aria-label="Full screen">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+    </button>
+  </nav>
+
+  <!-- Settings: a panel on the right, so changes show on the counter as you make them -->
+  <dialog id="settings" class="drawer" aria-labelledby="settings-title">
+    <div class="drawer-head">
+      <h2 id="settings-title">Settings</h2>
+      <span id="save-state" class="save-state" aria-live="polite"></span>
+      <button id="btn-close-settings" class="icon-btn" type="button" aria-label="Close settings" title="Close (Esc)">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Settings sections">
+      <button type="button" role="tab" data-tab="counters">Counters</button>
+      <button type="button" role="tab" data-tab="text">Text</button>
+      <button type="button" role="tab" data-tab="look">Look</button>
+      <button type="button" role="tab" data-tab="effects">Effects</button>
+      <button type="button" role="tab" data-tab="sound">Sound</button>
+      <button type="button" role="tab" data-tab="stream">Stream</button>
+      <button type="button" role="tab" data-tab="app">App</button>
+    </div>
+
+    <div class="panels">
+      <!-- ===== Counters ===== -->
+      <div class="panel" role="tabpanel" data-panel="counters">
+        <section class="sheet-section">
+          <h3>Your counters</h3>
+          <ol id="counter-list" class="counter-list"></ol>
+          <p class="fine">Open a counter to change its label, set a goal or hide it. Hidden counters stay off the screen.</p>
+        </section>
+
+        <section class="sheet-section">
+          <h3>Add a counter</h3>
+          <form id="add-form" class="form" novalidate>
+            <div id="add-platforms" class="chips" role="radiogroup" aria-label="Platform"></div>
+            <label id="add-handle-field" class="field">
+              <span class="field-label">Account</span>
+              <input id="add-handle" type="text" autocomplete="off" autocapitalize="off" spellcheck="false">
+            </label>
+            <div id="add-token-field" class="field" hidden>
+              <label class="field-label" for="add-token">Instagram access token</label>
+              <div class="key-row">
+                <input id="add-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <button type="button" class="ghost small" data-toggle-key="add-token">Show</button>
+              </div>
+              <span class="field-hint local-only">Instagram doesn’t show counts to apps without one. It’s saved only on this computer and renewed automatically.</span>
+              <span class="field-hint hosted-only">Instagram doesn’t show counts to apps without one. It’s kept in this site’s private database, used only to read your follower and post counts, renewed automatically, and deleted when you remove the counter.</span>
+              <details class="guide tight">
+                <summary>How to get an Instagram token (about 10 minutes)</summary>
+                <ol>
+                  <li>Your Instagram account has to be a free <b>professional</b> account (Creator or Business). In the Instagram app: <b>Settings → Account type and tools → Switch to professional account</b>.</li>
+                  <li>Open <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener noreferrer">Meta for Developers</a>, log in, and click <b>Create app</b>. Choose the use case for Instagram (<b>Manage messaging &amp; content on Instagram</b>) and finish creating the app.</li>
+                  <li>In your new app, open <b>Instagram → API setup with Instagram login</b>. Under <b>Generate access tokens</b>, click <b>Add account</b> and sign in to your Instagram account.</li>
+                  <li>Click <b>Generate token</b> next to your account, copy the token and paste it above.</li>
+                </ol>
+              </details>
+            </div>
+            <label class="field">
+              <span class="field-label">Number to show</span>
+              <select id="add-metric"></select>
+            </label>
+            <p id="add-yt-note" class="fine flush" hidden>Uses the YouTube channel connected under <b>App</b>.</p>
+            <p id="add-error" class="form-error" role="alert" hidden></p>
+            <button id="btn-add" class="primary" type="submit">Add counter</button>
+          </form>
+          <p class="fine local-only">X (Twitter), Facebook, Threads and Snapchat aren’t supported.</p>
+          <p class="fine hosted-only">On the website you can add YouTube and Bluesky counters. Other platforms aren’t supported here.</p>
+        </section>
+
+        <section class="sheet-section">
+          <h3>When there’s more than one</h3>
+          <div class="seg" role="radiogroup" aria-label="Layout">
+            <label><input type="radio" name="layout.mode" value="single" data-k="layout.mode"><span><b>One at a time</b> Switch with the arrows or ← →</span></label>
+            <label><input type="radio" name="layout.mode" value="grid" data-k="layout.mode"><span><b>All at once</b> Side by side in a grid</span></label>
+            <label><input type="radio" name="layout.mode" value="rotate" data-k="layout.mode"><span><b>Take turns</b> Switches to the next one by itself</span></label>
+          </div>
+          <label class="range" data-when="layout.mode=rotate">
+            <span>Switch every</span>
+            <input type="range" min="4" max="60" step="1" data-k="layout.rotateSec">
+            <output data-out="layout.rotateSec" data-suffix=" s"></output>
+          </label>
+        </section>
+      </div>
+
+      <!-- ===== Text ===== -->
+      <div class="panel" role="tabpanel" data-panel="text" hidden>
+        <section class="sheet-section">
+          <h3>Font</h3>
+          <div id="font-grid" class="font-grid" role="radiogroup" aria-label="Font"></div>
+          <label class="check"><input type="checkbox" data-k="text.fontAll"><span>Use it for the name and label too</span></label>
+          <p class="fine flush hosted-only">These fonts come from Google Fonts. On the website they load only for visitors who allow “Fonts from Google” in Cookie settings. Everyone else sees a similar font from their own device.</p>
+        </section>
+        <section class="sheet-section">
+          <h3>Number</h3>
+          <label class="range"><span>Weight</span><input type="range" min="300" max="900" step="100" data-k="text.weight"><output data-out="text.weight"></output></label>
+          <label class="range"><span>Size</span><input type="range" min="50" max="160" step="5" data-k="text.size"><output data-out="text.size" data-suffix="%"></output></label>
+          <label class="range"><span>Letter spacing</span><input type="range" min="-8" max="30" step="1" data-k="text.spacing"><output data-out="text.spacing"></output></label>
+          <label class="field inline">
+            <span class="field-label">Thousands separator</span>
+            <select data-k="text.sep">
+              <option value="auto">Your region’s style</option>
+              <option value="comma">Commas (1,234,567)</option>
+              <option value="space">Spaces (1 234 567)</option>
+              <option value="dot">Dots (1.234.567)</option>
+              <option value="apostrophe">Apostrophes (1’234’567)</option>
+              <option value="none">None (1234567)</option>
+            </select>
+          </label>
+        </section>
+        <section class="sheet-section">
+          <h3>Number colour</h3>
+          <div class="pills" role="radiogroup" aria-label="Number colour">
+            <label><input type="radio" name="text.color" value="white" data-k="text.color"><span>White</span></label>
+            <label><input type="radio" name="text.color" value="accent" data-k="text.color"><span>Logo colours</span></label>
+            <label><input type="radio" name="text.color" value="custom" data-k="text.color"><span>One colour</span></label>
+            <label><input type="radio" name="text.color" value="gradient" data-k="text.color"><span>Gradient</span></label>
+          </div>
+          <div class="colors" data-when="text.color=custom,gradient">
+            <label class="color"><input type="color" data-k="text.color1"><span data-when="text.color=gradient">Top</span><span data-when="text.color=custom">Colour</span></label>
+            <label class="color" data-when="text.color=gradient"><input type="color" data-k="text.color2"><span>Bottom</span></label>
+          </div>
+          <label class="range"><span>Glow</span><input type="range" min="0" max="100" step="5" data-k="text.glow"><output data-out="text.glow" data-suffix="%"></output></label>
+          <label class="check"><input type="checkbox" data-k="text.shadow"><span>Dark outline (easier to read over video)</span></label>
+        </section>
+        <section class="sheet-section">
+          <h3>Name and label</h3>
+          <label class="range"><span>Name size</span><input type="range" min="50" max="180" step="5" data-k="text.nameSize"><output data-out="text.nameSize" data-suffix="%"></output></label>
+          <label class="range"><span>Label size</span><input type="range" min="50" max="180" step="5" data-k="text.labelSize"><output data-out="text.labelSize" data-suffix="%"></output></label>
+          <label class="check"><input type="checkbox" data-k="text.labelUpper"><span>Label in CAPITALS</span></label>
+          <p class="fine flush">Each counter’s label (like “Total views”) can be changed under <b>Counters</b>.</p>
+        </section>
+      </div>
+
+      <!-- ===== Look ===== -->
+      <div class="panel" role="tabpanel" data-panel="look" hidden>
+        <section class="sheet-section">
+          <h3>Counter style</h3>
+          <div class="seg" role="radiogroup" aria-label="Counter style">
+            <label><input type="radio" name="look.style" value="3d" data-k="look.style"><span><b>3D</b> Rolling drums with a mechanical bounce</span></label>
+            <label><input type="radio" name="look.style" value="classic" data-k="look.style"><span><b>Classic</b> Digits slide up into place</span></label>
+            <label><input type="radio" name="look.style" value="plain" data-k="look.style"><span><b>Plain</b> No animation, the number just changes</span></label>
+          </div>
+          <div class="pills" role="radiogroup" aria-label="Roll speed" data-when="look.style=3d,classic">
+            <span class="pills-label">Roll speed</span>
+            <label><input type="radio" name="look.speed" value="slow" data-k="look.speed"><span>Slow</span></label>
+            <label><input type="radio" name="look.speed" value="normal" data-k="look.speed"><span>Normal</span></label>
+            <label><input type="radio" name="look.speed" value="fast" data-k="look.speed"><span>Fast</span></label>
+          </div>
+        </section>
+        <section class="sheet-section">
+          <h3>Background</h3>
+          <div class="pills" role="radiogroup" aria-label="Background">
+            <label><input type="radio" name="look.bg" value="aurora" data-k="look.bg"><span>Aurora</span></label>
+            <label><input type="radio" name="look.bg" value="solid" data-k="look.bg"><span>Colour</span></label>
+            <label><input type="radio" name="look.bg" value="gradient" data-k="look.bg"><span>Gradient</span></label>
+            <label class="local-only"><input type="radio" name="look.bg" value="image" data-k="look.bg"><span>Picture</span></label>
+            <label><input type="radio" name="look.bg" value="transparent" data-k="look.bg"><span>Transparent</span></label>
+          </div>
+          <p class="fine flush" data-when="look.bg=aurora">Soft moving light in the colours of your logo.</p>
+          <p class="fine flush" data-when="look.bg=transparent">See-through, for OBS and other overlays. In a normal browser it looks black.</p>
+          <div class="colors" data-when="look.bg=solid,gradient">
+            <label class="color"><input type="color" data-k="look.bg1"><span>Colour</span></label>
+            <label class="color" data-when="look.bg=gradient"><input type="color" data-k="look.bg2"><span>Second colour</span></label>
+          </div>
+          <label class="range" data-when="look.bg=gradient"><span>Angle</span><input type="range" min="0" max="360" step="5" data-k="look.bgAngle"><output data-out="look.bgAngle" data-suffix="°"></output></label>
+          <div class="local-only" data-when="look.bg=image">
+            <div class="row">
+              <label class="ghost-btn"><input id="bg-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" hidden>Upload a picture</label>
+              <button id="btn-bg-remove" class="ghost small" type="button">Remove</button>
+            </div>
+            <label class="field local-only">
+              <span class="field-label">Or paste a picture link</span>
+              <input type="text" placeholder="https://…" data-k="look.bgImage" autocomplete="off" spellcheck="false">
+            </label>
+            <p class="fine flush hosted-only">JPG, PNG, WebP or GIF, up to 3 MB. Only use a picture you have the right to share.</p>
+            <p id="bg-upload-error" class="form-error" role="alert" hidden></p>
+            <label class="range"><span>Darken</span><input type="range" min="0" max="90" step="5" data-k="look.bgDim"><output data-out="look.bgDim" data-suffix="%"></output></label>
+            <label class="range"><span>Blur</span><input type="range" min="0" max="40" step="1" data-k="look.bgBlur"><output data-out="look.bgBlur" data-suffix=" px"></output></label>
+          </div>
+        </section>
+        <section class="sheet-section">
+          <h3>Accent colour</h3>
+          <div class="pills" role="radiogroup" aria-label="Accent colour">
+            <label><input type="radio" name="look.accent" value="logo" data-k="look.accent"><span>From each logo</span></label>
+            <label><input type="radio" name="look.accent" value="custom" data-k="look.accent"><span>Pick one</span></label>
+          </div>
+          <div class="colors" data-when="look.accent=custom">
+            <label class="color"><input type="color" data-k="look.accentColor"><span>Accent</span></label>
+          </div>
+          <p class="fine flush">Used for the glow, the ring around the logo, sparks, confetti and the goal bar.</p>
+        </section>
+        <section class="sheet-section">
+          <h3>Logo and name</h3>
+          <label class="check"><input type="checkbox" data-k="look.avatar"><span>Show the logo</span></label>
+          <div data-when="look.avatar=true">
+            <label class="check"><input type="checkbox" data-k="look.ring"><span>Turning ring around the logo</span></label>
+            <div class="pills" role="radiogroup" aria-label="Logo shape">
+              <span class="pills-label">Shape</span>
+              <label><input type="radio" name="look.avatarShape" value="circle" data-k="look.avatarShape"><span>Circle</span></label>
+              <label><input type="radio" name="look.avatarShape" value="rounded" data-k="look.avatarShape"><span>Rounded</span></label>
+              <label><input type="radio" name="look.avatarShape" value="square" data-k="look.avatarShape"><span>Square</span></label>
+            </div>
+            <label class="range"><span>Logo size</span><input type="range" min="50" max="180" step="5" data-k="look.avatarSize"><output data-out="look.avatarSize" data-suffix="%"></output></label>
+          </div>
+          <label class="check"><input type="checkbox" data-k="look.name"><span>Show the name</span></label>
+        </section>
+        <section class="sheet-section">
+          <h3>Show on screen</h3>
+          <label class="check"><input type="checkbox" data-k="look.label"><span>Label under the number</span></label>
+          <label class="check local-only"><input type="checkbox" data-k="look.stats"><span>Pace and 24-hour change</span></label>
+          <label class="check local-only"><input type="checkbox" data-k="look.chart"><span>Chart of the last 24 hours</span></label>
+          <label class="check"><input type="checkbox" data-k="look.goal"><span>Goal progress bar (set goals under Counters)</span></label>
+          <label class="check"><input type="checkbox" data-k="look.status"><span>Status in the corner</span></label>
+          <p class="fine flush hosted-only">On the website, YouTube counters show only YouTube’s own numbers, so they have no goal bar. Bluesky counters can show one.</p>
+          <label class="range"><span>Overall size</span><input type="range" min="60" max="150" step="5" data-k="look.scale"><output data-out="look.scale" data-suffix="%"></output></label>
+        </section>
+        <section class="sheet-section">
+          <h3>Screen</h3>
+          <label class="check"><input type="checkbox" data-k="look.autoHide"><span>Hide the buttons and cursor when the mouse is still</span></label>
+          <label class="check"><input type="checkbox" data-k="look.wakeLock"><span>Keep the screen on while the counter is open</span></label>
+        </section>
+      </div>
+
+      <!-- ===== Effects ===== -->
+      <div class="panel" role="tabpanel" data-panel="effects" hidden>
+        <section class="sheet-section">
+          <h3>Every time it goes up</h3>
+          <label class="check"><input type="checkbox" data-k="effects.glow"><span>Glow pulse behind the number</span></label>
+          <label class="check"><input type="checkbox" data-k="effects.floaters"><span>Floating +1s</span></label>
+        </section>
+        <section class="sheet-section">
+          <h3>Milestones</h3>
+          <div class="seg" role="radiogroup" aria-label="Milestones">
+            <label><input type="radio" name="effects.milestones" value="normal" data-k="effects.milestones"><span><b>All</b> Sparks every 100, a wave every 1,000, confetti every 10,000</span></label>
+            <label><input type="radio" name="effects.milestones" value="big" data-k="effects.milestones"><span><b>Big ones only</b> Every 10,000, 100,000 and million</span></label>
+            <label><input type="radio" name="effects.milestones" value="off" data-k="effects.milestones"><span><b>Off</b></span></label>
+          </div>
+          <div data-when="effects.milestones=normal,big">
+            <label class="check"><input type="checkbox" data-k="effects.sparks"><span>Sparks</span></label>
+            <label class="check"><input type="checkbox" data-k="effects.confetti"><span>Confetti</span></label>
+            <label class="check"><input type="checkbox" data-k="effects.toast"><span>Milestone banner at the top</span></label>
+          </div>
+          <div class="row">
+            <button class="ghost small" type="button" data-try="1000">Try 1,000</button>
+            <button class="ghost small" type="button" data-try="100000">Try 100,000</button>
+            <button class="ghost small" type="button" data-try="goal">Try a goal</button>
+          </div>
+        </section>
+      </div>
+
+      <!-- ===== Sound ===== -->
+      <div class="panel" role="tabpanel" data-panel="sound" hidden>
+        <section class="sheet-section">
+          <h3>Tick sound</h3>
+          <label class="check"><input id="sound-on" type="checkbox"><span>Play sounds on this device (M)</span></label>
+          <div id="tick-grid" class="sound-grid" role="radiogroup" aria-label="Tick sound"></div>
+          <div class="local-only" data-when="sound.type=custom">
+            <div class="row">
+              <label class="ghost-btn"><input id="sound-file" type="file" accept="audio/*" hidden>Choose a sound file</label>
+              <span id="sound-file-name" class="fine flush"></span>
+            </div>
+            <p id="sound-upload-error" class="form-error" role="alert" hidden></p>
+            <p class="fine flush">A short MP3, WAV, OGG or M4A file (under 2 MB) works best.</p>
+          </div>
+          <label class="range"><span>Volume</span><input type="range" min="0" max="100" step="5" data-k="sound.volume"><output data-out="sound.volume" data-suffix="%"></output></label>
+          <label class="range"><span>Pitch</span><input type="range" min="50" max="200" step="5" data-k="sound.pitch"><output data-out="sound.pitch" data-suffix="%"></output></label>
+          <label class="field inline">
+            <span class="field-label">Tick</span>
+            <select data-k="sound.every" data-num>
+              <option value="1">Every time it goes up</option>
+              <option value="10">Every 10</option>
+              <option value="100">Every 100</option>
+              <option value="1000">Every 1,000</option>
+            </select>
+          </label>
+        </section>
+        <section class="sheet-section">
+          <h3>Milestone chime</h3>
+          <label class="check"><input type="checkbox" data-k="sound.chime"><span>Play a chime at milestones and goals</span></label>
+          <div data-when="sound.chime=true">
+            <div id="chime-grid" class="sound-grid" role="radiogroup" aria-label="Chime"></div>
+            <label class="range"><span>Chime volume</span><input type="range" min="0" max="100" step="5" data-k="sound.chimeVolume"><output data-out="sound.chimeVolume" data-suffix="%"></output></label>
+          </div>
+        </section>
+      </div>
+
+      <!-- ===== Stream ===== -->
+      <div class="panel" role="tabpanel" data-panel="stream" hidden>
+        <section class="sheet-section">
+          <h3>OBS and streaming overlay</h3>
+          <p class="fine flush">In OBS, add a <b>Browser</b> source with this address and set it to 1920 × 1080. It uses the same look as this page and updates when you change settings here.</p>
+          <p id="ov-private" class="form-error hosted-only" hidden>Your page is private, so this address won’t show anything in OBS yet. Make it public on your <a href="/account">account page</a> first.</p>
+          <p class="fine flush hosted-only">Public pages update about once a minute.</p>
+          <label class="field inline">
+            <span class="field-label">Show</span>
+            <select id="ov-counter"></select>
+          </label>
+          <label class="field inline">
+            <span class="field-label">Style</span>
+            <select id="ov-style">
+              <option value="">Same as here</option>
+              <option value="3d">3D</option>
+              <option value="classic">Classic</option>
+              <option value="plain">Plain</option>
+            </select>
+          </label>
+          <label class="check"><input id="ov-transparent" type="checkbox" checked><span>See-through background</span></label>
+          <label class="check"><input id="ov-sound" type="checkbox"><span>Play the tick sound in OBS</span></label>
+          <div class="copy-row">
+            <code id="overlay-url"></code>
+            <button id="btn-copy" class="ghost small" type="button">Copy</button>
+          </div>
+        </section>
+        <section class="sheet-section local-only">
+          <h3>Phone or tablet</h3>
+          <p class="fine flush">To open the counter on another device on your Wi-Fi, stop it, then start it with <code class="inline">node server.js --lan --background</code> in the counter’s folder and open the address it shows. Settings can only be changed on this computer.</p>
+        </section>
+      </div>
+
+      <!-- ===== App ===== -->
+      <div class="panel" role="tabpanel" data-panel="app" hidden>
+        <section class="sheet-section">
+          <h3><span class="local-only">YouTube channel and API key</span><span class="hosted-only">YouTube channel</span></h3>
+          <form id="settings-form" class="form" novalidate>
+            <label class="field">
+              <span class="field-label">Channel</span>
+              <input id="set-channel" type="text" placeholder="@yourhandle or your channel link" autocomplete="off" autocapitalize="off" spellcheck="false">
+            </label>
+            <div id="set-key-field" class="field">
+              <label class="field-label" for="set-key">API key</label>
+              <div class="key-row">
+                <input id="set-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <button type="button" class="ghost small" data-toggle-key="set-key">Show</button>
+              </div>
+              <span id="set-key-hint" class="field-hint">Leave empty to keep the saved key.</span>
+            </div>
+            <p id="set-key-env" class="fine flush local-only" hidden>Using the YOUTUBE_API_KEY set in Vercel’s environment variables.</p>
+            <p class="fine flush hosted-only">Your @handle or a link to your channel. Only its public numbers are read. By connecting a channel you agree to <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">YouTube’s Terms of Service</a>.</p>
+            <p id="settings-error" class="form-error" role="alert" hidden></p>
+            <div class="row">
+              <button id="btn-save" class="primary" type="submit">Save</button>
+              <button id="btn-disconnect" class="ghost danger" type="button">Disconnect</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="sheet-section local-only">
+          <h3>YouTube counter details</h3>
+          <dl class="facts">
+            <div><dt>Latest reading</dt><dd id="f-total">–</dd></div>
+            <div><dt>YouTube’s public total</dt><dd id="f-official">–</dd></div>
+            <div><dt>Current pace</dt><dd id="f-rate">–</dd></div>
+            <div><dt>Last 24 hours</dt><dd id="f-day">–</dd></div>
+            <div><dt>Checks YouTube</dt><dd id="f-tick">–</dd></div>
+            <div><dt>Videos tracked</dt><dd id="f-videos">–</dd></div>
+            <div><dt>API allowance used today</dt><dd id="f-quota">–</dd></div>
+          </dl>
+          <p class="fine">YouTube only refreshes the total on your channel page every so often, and each video’s count in bursts. So the counter adds up the current views of every public video (keeping the views of any you delete for 30 days), and between readings it keeps rolling at your channel’s measured pace, which is an estimate. Each new reading keeps it in line.</p>
+        </section>
+
+        <section class="sheet-section hosted-only">
+          <h3>Your page</h3>
+          <p id="page-visibility" class="fine flush"></p>
+          <p class="fine flush">This page shows each platform’s official numbers: YouTube’s channel statistics, checked about once a minute, and Bluesky profile counts. Visitors can’t change anything. Only you can, while signed in.</p>
+          <div class="row">
+            <a class="ghost-btn small" href="/account">Account and privacy</a>
+            <button id="btn-signout" class="ghost small" type="button">Sign out</button>
+          </div>
+        </section>
+
+        <section class="sheet-section local-only">
+          <h3>Running in the background</h3>
+          <p class="fine flush">The counter runs quietly in the background with no window, even when this page is closed. Open this page any time with the <b>Live View Counter</b> icon on your desktop.</p>
+          <label id="autostart-row" class="check" hidden>
+            <input id="set-autostart" type="checkbox">
+            <span>Start automatically when I sign in to Windows</span>
+          </label>
+          <p id="bg-error" class="form-error" role="alert" hidden></p>
+          <div class="row">
+            <button id="btn-stop" class="ghost danger" type="button">Stop the counter</button>
+          </div>
+        </section>
+
+        <section class="sheet-section">
+          <h3>Backup</h3>
+          <div class="row">
+            <button id="btn-export" class="ghost small" type="button">Save settings to a file</button>
+            <label class="ghost-btn small"><input id="import-file" type="file" accept="application/json,.json" hidden>Load settings from a file</label>
+            <button id="btn-reset" class="ghost small danger" type="button">Reset the look</button>
+          </div>
+          <p id="backup-msg" class="fine" hidden></p>
+          <p class="fine">“Reset the look” puts text, look, effects and sound back to how they started. Your counters stay.</p>
+        </section>
+
+        <section class="sheet-section">
+          <h3>Keyboard shortcuts</h3>
+          <dl class="keys">
+            <div><dt><kbd>F</kbd></dt><dd>Full screen</dd></div>
+            <div><dt><kbd>M</kbd></dt><dd>Sound on or off</dd></div>
+            <div><dt><kbd>S</kbd></dt><dd>Settings</dd></div>
+            <div><dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Previous or next counter</dd></div>
+            <div><dt><kbd>Esc</kbd></dt><dd>Close settings</dd></div>
+          </dl>
+        </section>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Website version only: site links and privacy choices (see site.js, which also adds the banner) -->
+  <footer id="site-footer" class="site-footer" hidden>
+    <nav aria-label="Site">
+      <a href="/">Home</a>
+      <a href="/account" data-when-user hidden>My account</a>
+      <a href="/signin" data-when-guest>Sign in</a>
+      <a href="/signup" data-when-guest>Make your own</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="/cookies">Cookies</a>
+      <button type="button" data-cookie-settings>Cookie settings</button>
+      <a href="/contact">Contact</a>
+      <a id="report-link" href="/contact#report" hidden>Report this page</a>
+    </nav>
+    <p>Not affiliated with or endorsed by YouTube, Google or Bluesky.</p>
+  </footer>
+
+  <script src="/catalog.js"></script>
+  <script src="/site.js"></script>
+  <script src="/odometer.js"></script>
+  <script src="/drum.js"></script>
+  <script src="/fx.js"></script>
+  <script src="/sound.js"></script>
+  <script src="/app.js"></script>
+  <script src="/settings.js"></script>
+</body>
+</html>

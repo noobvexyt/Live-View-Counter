@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Site owner · Live View Counter</title>
+  <meta name="robots" content="noindex">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0f0f0f">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/site.css">
+</head>
+<body data-page="admin">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-head">
+    <div class="wrap head-row">
+      <a class="brand" href="/"><img src="/favicon.svg" alt="" width="28" height="28">Live View Counter</a>
+      <nav class="head-nav" aria-label="Main">
+        <button id="btn-admin-out" class="link-btn" type="button" hidden>Sign out of owner tools</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="wrap narrow">
+      <div class="doc">
+        <h1>Site owner</h1>
+        <p class="muted">Tools for the person who runs this site, to deal with reports. This is separate from user accounts.</p>
+      </div>
+
+      <section id="admin-login" class="panel thin" aria-labelledby="al-title" hidden>
+        <h2 id="al-title" class="mt-0">Owner sign-in</h2>
+        <form id="admin-form" class="form" novalidate>
+          <input type="text" name="username" autocomplete="username" value="site-owner" class="hp" tabindex="-1" aria-hidden="true">
+          <div class="field">
+            <label class="field-label" for="ad-password">Owner password</label>
+            <input id="ad-password" type="password" autocomplete="current-password" maxlength="200" required>
+            <span class="field-hint">The ADMIN_PASSWORD set in Vercel. Signing in stores one cookie for up to 12 hours.</span>
+          </div>
+          <p id="ad-error" class="form-error" role="alert" hidden></p>
+          <div><button id="btn-ad-signin" class="btn" type="submit">Sign in</button></div>
+        </form>
+      </section>
+
+      <div id="admin-tools" class="acct-grid" hidden>
+        <section class="acct-section" aria-labelledby="ov-title">
+          <h2 id="ov-title">Overview</h2>
+          <dl class="facts">
+            <div><dt>Accounts</dt><dd id="ov-users">–</dd></div>
+            <div><dt>New accounts</dt><dd id="ov-signups">–</dd></div>
+            <div><dt>YouTube API key</dt><dd id="ov-yt">–</dd></div>
+            <div><dt>Visit counting (Vercel Web Analytics)</dt><dd id="ov-analytics">–</dd></div>
+            <div><dt>Channels and profiles being watched</dt><dd id="ov-watched">–</dd></div>
+          </dl>
+          <p id="ov-error" class="form-error mt-s" role="alert" hidden></p>
+          <p class="fine mt-s">The account limit is set with MAX_USERS in Vercel, and new accounts can be paused with SIGNUPS=closed. Change them under Settings → Environment Variables, then redeploy.</p>
+        </section>
+
+        <section class="acct-section" aria-labelledby="find-title">
+          <h2 id="find-title">Find an account</h2>
+          <form id="find-form" class="form" novalidate>
+            <div class="field">
+              <label class="field-label" for="find-name">Username or page address</label>
+              <input id="find-name" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="120" placeholder="yourname or https://…/u/yourname" required>
+            </div>
+            <p id="find-error" class="form-error" role="alert" hidden></p>
+            <div><button id="btn-find" class="btn small" type="submit">Find</button></div>
+          </form>
+          <p id="find-done" class="notice good mt-s" role="status" hidden></p>
+
+          <div id="found" class="mt-m" hidden>
+            <dl class="facts">
+              <div><dt>Username</dt><dd id="fd-name"></dd></div>
+              <div><dt>Page</dt><dd><a id="fd-page" target="_blank" rel="noopener"></a></dd></div>
+              <div><dt>Public</dt><dd id="fd-public"></dd></div>
+              <div><dt>Made</dt><dd id="fd-created"></dd></div>
+              <div><dt>Last signed in</dt><dd id="fd-signin"></dd></div>
+              <div><dt>YouTube channel ID</dt><dd id="fd-yt"></dd></div>
+              <div><dt>Counters</dt><dd id="fd-counters"></dd></div>
+              <div><dt>Suspended</dt><dd id="fd-suspended"></dd></div>
+            </dl>
+            <div class="field mt-m">
+              <label class="field-label" for="fd-reason">Reason (shown to the account’s owner, not to visitors)</label>
+              <input id="fd-reason" type="text" maxlength="300" placeholder="For example: the page breaks the Terms (section 5)">
+            </div>
+            <div class="btn-row">
+              <button id="btn-suspend" class="btn ghost small" type="button">Suspend</button>
+              <button id="btn-unsuspend" class="btn ghost small" type="button">Lift suspension</button>
+              <button id="btn-remove" class="btn danger small" type="button">Delete account…</button>
+            </div>
+            <p id="fd-error" class="form-error mt-s" role="alert" hidden></p>
+            <p id="fd-done" class="notice good mt-s" role="status" hidden></p>
+            <p class="fine mt-s">Suspending hides the page from everyone else at once (copies kept by Vercel’s CDN can take up to 2 minutes to go) and stops its owner changing it. They can still sign in, download their data and delete their account.</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <nav aria-label="Site">
+        <a href="/">Home</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/cookies">Cookies</a>
+        <a href="/contact">Contact and reports</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="/site.js"></script>
+  <script src="/pages.js"></script>
+</body>
+</html>

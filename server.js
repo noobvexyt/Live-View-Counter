@@ -545,7 +545,9 @@ const CSP = "default-src 'self'; img-src * data: blob:; style-src 'self' 'unsafe
 function serveStatic(req, res, pathname) {
   let rel;
   try { rel = decodeURIComponent(pathname); } catch { return sendText(res, 400, 'Bad request'); }
-  if (rel.endsWith('/')) rel += 'index.html';
+  // The counter is live.html (index.html is the website's home page, which this app doesn't use).
+  if (rel === '/') rel = '/live.html';
+  else if (rel.endsWith('/')) rel += 'index.html';
   const file = path.join(PUBLIC_DIR, path.normalize(rel));
   if (!file.startsWith(PUBLIC_DIR + path.sep)) return sendText(res, 403, 'Forbidden');
   fs.readFile(file, (err, buf) => {
