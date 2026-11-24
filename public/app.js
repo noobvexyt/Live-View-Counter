@@ -266,6 +266,10 @@
       text.textContent = 'No counters to show yet.';
     }
     $('empty-links').hidden = !HOSTED || OVERLAY || canEdit();
+    const ytBtn = $('btn-empty-youtube');
+    ytBtn.hidden = missing || OVERLAY || !canEdit() || ytReady();
+    $('btn-empty-add').classList.toggle('primary', ytBtn.hidden); // the YouTube button comes first when it's there
+    $('btn-empty-add').classList.toggle('ghost', !ytBtn.hidden);
     box.hidden = !missing && (order.length > 0 || view !== 'counter');
   }
   document.addEventListener('visibilitychange', () => {
@@ -297,7 +301,9 @@
   }
 
   const ytReady = () => Boolean(snap && snap.status !== 'setup');
+  // "Count other platforms instead": remembered on this device (on the website, for each page).
   let skipSetup = false;
+  const skipKey = () => (HOSTED ? `lvc.skipSetup.${PAGE}` : 'lvc.skipSetup');
   try { skipSetup = localStorage.getItem('lvc.skipSetup') === '1'; } catch (e) { /* default */ }
 
   function decideView() {
@@ -1253,7 +1259,27 @@
   async function prefillSetup() {
     const c = await getConfig();
     if (c.channelInput && !$('in-channel').value) $('in-channel').value = c.channelInput;
+    renderYtOff(c);
   }
+
+  // Website: says up front when the site has no YouTube API key yet, and where its owner adds one.
+  function renderYtOff(c) {
+    if (!HOSTED || !c || typeof c.ytAvailable !== 'boolean') return;
+    CFG.ytAvailable = c.ytAvailable;
+    $('yt-off').hidden = c.ytAvailable;
+    $('yt-off-text').textContent = c.moderator
+      ? 'YouTube is off because this site doesn’t have a YouTube API key yet.'
+      : 'YouTube isn’t switched on for this site yet, so channels can’t be added right now. You can count Bluesky followers in the meantime.';
+  }
+  // (Checked again when you come back to this tab, for example after adding the key in another one.)
+  let ytCheckedAt = 0;
+  const recheckYt = () => {
+    if (!HOSTED || view !== 'setup' || document.hidden || Date.now() - ytCheckedAt < 3_000) return;
+    ytCheckedAt = Date.now();
+    getConfig().then(renderYtOff);
+  };
+  document.addEventListener('visibilitychange', recheckYt);
+  window.addEventListener('focus', recheckYt);
 
   $('setup-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1269,7 +1295,11 @@
     const res = await postJson(api('connect'), body);
     btn.disabled = false;
     btn.textContent = 'Start counting';
-    if (!res.ok) return showError($('setup-error'), res.error || {}, inputs);
+    if (!res.ok) {
+      if (res.error && res.error.kind === 'notSetUp') renderYtOff({ ytAvailable: false, moderator: Boolean(CFG.moderator) });
+      return showError($('setup-error'), res.error || {}, inputs);
+    }
+    if (HOSTED) renderYtOff({ ytAvailable: true });
     inputs.apiKey.value = '';
     for (const i of Object.values(inputs)) i.classList.remove('invalid');
     if (res.state) applySnapshot(res.state); // website: show the channel straight away
@@ -1280,12 +1310,18 @@
 
   $('btn-skip-youtube').addEventListener('click', () => {
     skipSetup = true;
-    try { localStorage.setItem('lvc.skipSetup', '1'); } catch (e) { /* fine */ }
+    try { localStorage.setItem(skipKey(), '1'); } catch (e) { /* fine */ }
     decideView();
     syncCards();
     openSettings('counters');
   });
   $('btn-empty-add').addEventListener('click', () => openSettings('counters'));
+  // Back to the YouTube setup from an empty page (for example after choosing "Bluesky instead").
+  $('btn-empty-youtube').addEventListener('click', () => {
+    skipSetup = false;
+    try { localStorage.removeItem(skipKey()); } catch (e) { /* fine */ }
+    show('setup');
+  });
 
   document.querySelectorAll('[data-toggle-key]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -1407,6 +1443,10 @@
       }
       PAGE = m[1].toLowerCase();
       if (location.pathname !== `/u/${PAGE}`) history.replaceState(null, '', `/u/${PAGE}${location.search}${location.hash}`);
+      try {
+        localStorage.removeItem('lvc.skipSetup'); // (older versions remembered this for every page at once)
+        skipSetup = localStorage.getItem(skipKey()) === '1';
+      } catch (e) { skipSetup = false; }
       OWN = Boolean(cfg.user && cfg.user.name === PAGE);
       $('in-key-field').hidden = true; // the website uses its own key
       document.documentElement.classList.toggle('admin', canEdit());

@@ -158,6 +158,15 @@ input.invalid { border-color: var(--danger); }
 .acct-section { padding: 22px 22px 20px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); }
 .acct-section h2 { margin: 0 0 8px; font-size: 19px; }
 .acct-section.danger-zone { border-color: rgba(255, 107, 111, 0.35); }
+.setup-step { padding: 18px 0 4px; border-top: 1px solid var(--line); }
+.setup-step:first-of-type { padding-top: 6px; border-top: 0; }
+.setup-step h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; font-size: 17px; }
+.step-num.small { width: 26px; height: 26px; margin: 0; font-size: 14px; flex: none; }
+details.guide { margin-top: 16px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg-2); }
+details.guide summary { color: var(--fg); font-weight: 600; cursor: pointer; }
+ol.howto { margin: 12px 0; padding-left: 22px; }
+ol.howto li { margin-bottom: 8px; }
+.notice a { color: inherit; text-underline-offset: 3px; }
 .facts { display: grid; gap: 6px; margin: 0; }
 .facts div { display: flex; justify-content: space-between; gap: 16px; padding: 6px 0; border-bottom: 1px solid var(--line); }
 .facts div:last-child { border-bottom: 0; }

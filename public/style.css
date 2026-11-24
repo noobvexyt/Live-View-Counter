@@ -599,6 +599,13 @@ body.idle .site-footer:not(:focus-within) { opacity: 0; }
 .empty-links { margin: 14px 0 0; }
 .empty-links a, .setup-foot a, .setup-card .fine a { color: #fff; text-underline-offset: 3px; }
 .setup-foot { margin-top: 18px; text-align: center; }
+.setup-note {
+  margin: 16px 0 0; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid rgba(245, 165, 36, 0.45); background: rgba(245, 165, 36, 0.08); color: var(--fg-2); font-size: 14.5px;
+}
+.setup-note p { margin: 0; }
+.setup-note p + p { margin-top: 8px; }
+.setup-note a { color: #fff; font-weight: 500; text-underline-offset: 3px; }
 
 dialog.modal {
   width: min(440px, calc(100vw - 24px)); padding: 24px; border-radius: 16px;

@@ -21,7 +21,7 @@ How it differs from the copy on your PC:
 | `/u/<username>` | Someone's counter page. The owner can change it while signed in. Everyone else only sees it if it's public |
 | `/contact` | How to report a page, complain, ask about data, or report a security problem |
 | `/privacy`, `/terms`, `/cookies` | The legal pages |
-| `/admin` | For you only: look up an account by username, suspend it, lift a suspension, or delete it |
+| `/admin` | For you only (the **Site owner** link at the bottom of every page): add the site's YouTube API key, and look up, suspend or delete an account |
 
 ## What's in this folder
 
@@ -56,32 +56,40 @@ In the project, open **Settings → Environment Variables** and add:
 
 | Name | Needed? | What to put |
 | --- | --- | --- |
-| `YOUTUBE_API_KEY` | Yes, for YouTube | A YouTube Data API key (steps below). Without it, people can sign up but can't connect a YouTube channel. |
-| `ADMIN_PASSWORD` | Yes | The password for `/admin`, where you deal with reports. At least 12 characters; a long random one is best. Don't reuse a password from anywhere else. |
+| `ADMIN_PASSWORD` | Yes | The password for the Site owner page (`/admin`), where you add the YouTube API key and deal with reports. At least 12 characters; a long random one is best. Don't reuse a password from anywhere else. |
 | `OWNER_NAME` | Strongly recommended | Your name or your business's name. The legal pages show it as the person running the site. UK data protection law expects that to be stated. |
 | `MAX_USERS` | Optional | The most accounts the site allows. Default `300`. When it's full, the sign-up page says so. |
 | `SIGNUPS` | Optional | Set to `closed` to pause new sign-ups. Existing accounts keep working. |
-| `WEB_ANALYTICS` | Optional | Set to `1` to offer visitors Vercel Web Analytics (see step 5). |
+| `WEB_ANALYTICS` | Optional | Set to `1` to offer visitors Vercel Web Analytics (see step 6). |
 | `SESSION_SECRET` | Optional | Any random text of 32 characters or more. It signs the sign-in cookies. Without it, the site makes one and keeps it in the database. Changing it signs everyone out. |
+| `YOUTUBE_API_KEY` | Not needed | You paste the key on the Site owner page instead (step 4). A key set here is only used when none is saved there. |
 
 Then redeploy so the settings take effect: **Deployments → ⋯ next to the latest one → Redeploy**.
 
-**Use a separate YouTube API key for the website.** The copy on your PC uses most of its key's free daily allowance by design, so sharing that key would leave the website short. Create a second Google Cloud project with its own key: [create a project](https://console.cloud.google.com/projectcreate), [enable YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com) for it, then [Credentials](https://console.cloud.google.com/apis/credentials) → **Create credentials** → **API key**, and restrict the key to **YouTube Data API v3**.
+### 4. Switch on YouTube (on the site)
+
+1. Open your site and click **Site owner** at the bottom of any page (or go to `/admin`). Sign in with your `ADMIN_PASSWORD`.
+2. Under **Set up the site → Switch on YouTube**, open **How to get a free YouTube API key** and follow the steps. In short: [create a Google Cloud project](https://console.cloud.google.com/projectcreate), [enable YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com) for it, then [Credentials](https://console.cloud.google.com/apis/credentials) → **Create credentials** → **API key**, and restrict the key to **YouTube Data API v3** (leave application restrictions on **None**).
+3. Paste the key and click **Check and save**. The site checks it with Google first and tells you exactly what's wrong if Google refuses it. Once it says **YouTube is on**, everyone can add their channel.
+
+The key is kept in the site's database and never shown on any page (the Site owner page only shows its last 4 characters). If Google ever stops accepting it, the Site owner page says why.
+
+**Use a separate YouTube API key for the website.** The copy on your PC uses most of its key's free daily allowance by design, so sharing that key would leave the website short.
 
 The site reads every channel that's being watched in one go, once a minute, 50 channels per request. Each request costs 1 of the key's 10,000 free units a day, so up to 50 channels watched at once use about 1,440 units a day, and the default limit of 300 accounts stays under 10,000 even if every one of them is open all day. If you raise `MAX_USERS` well above 300, ask Google for more quota first.
 
-### 4. Make your own account
+### 5. Make your own account
 
 1. Open your site, click **Sign up**, and pick your username (for example the name you use on YouTube). Usernames are first come, first served, so do this before you share the link.
 2. Save the recovery code it shows you. It's the only way back in if you forget your password, because the site doesn't ask for an email address.
 3. Enter your channel and click **Start counting**. Press `S` (or the gear icon) to add Bluesky counters and change the look.
 4. On **Account**, make your page public when you're ready for others to see it.
 
-### 5. Optional: visit counting
+### 6. Optional: visit counting
 
 In Vercel open **Analytics** and enable **Web Analytics**, then add the `WEB_ANALYTICS` setting with the value `1` and redeploy. Visitors are then asked first, and it only runs for those who say yes.
 
-### 6. Optional: your own domain
+### 7. Optional: your own domain
 
 In Vercel: **Settings → Domains**. HTTPS is set up automatically.
 
@@ -108,6 +116,7 @@ Each person's overlay address is their page address followed by `?overlay` (for 
 ## Before you share the link
 
 - Set `OWNER_NAME`, so the legal pages say who runs the site.
+- Switch on YouTube on the Site owner page (step 4), so people can add their channels.
 - Sign up for your own username first.
 - **ICO data protection fee:** the site keeps accounts (usernames and password hashes), so check whether you need to pay the fee using the ICO's short self-assessment on its website. Some non-commercial sites are exempt, but check.
 - **Online Safety Act:** people can make pages that others see, so the site may count as a user-to-user service. Ofcom has an online tool to check whether the rules apply. If they do, you need to write down an illegal content risk assessment and a children's access assessment (Ofcom publishes guidance and templates), and keep the reporting and complaints routes on the contact page working. The site already has those routes, no uploads, no messaging, pages that are private by default, and a way for you to suspend or remove pages.

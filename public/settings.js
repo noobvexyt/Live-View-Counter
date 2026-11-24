@@ -236,7 +236,11 @@
       const ch = snap.channel;
       if (snap.status === 'setup') {
         out.status = 'error';
-        out.error = 'YouTube isn’t connected yet (see the App tab).';
+        out.error = !A.hosted
+          ? 'YouTube isn’t connected yet (see the App tab).'
+          : A.config && A.config.ytAvailable === false
+            ? 'YouTube isn’t switched on for this site yet.'
+            : 'Not connected yet. Add your channel under the Channel tab.';
         out.name = 'YouTube';
       } else if (ch) {
         out.name = ch.title;
@@ -457,7 +461,7 @@
         return A.showError(errBox, { message: 'That YouTube counter is already on the list.' });
       }
       if (!A.snap || A.snap.status === 'setup') {
-        return A.showError(errBox, { message: 'Connect your YouTube channel under the App tab first.' });
+        return A.showError(errBox, { message: A.hosted ? 'Connect your YouTube channel under the Channel tab first.' : 'Connect your YouTube channel under the App tab first.' });
       }
       counter = { id: newId(`yt-${metric}`), platform: 'youtube', metric };
     } else {

@@ -449,14 +449,98 @@
     async function overview() {
       const { status, data } = await get('/api/admin/overview');
       if (status === 403) return showLogin();
-      if (!data.ok) return showError($('ov-error'), data.error);
+      if (!data.ok) {
+        $('yt-status').textContent = 'Couldn’t load the site’s settings. Reload the page to try again.';
+        return showError($('ov-error'), data.error);
+      }
       $('ov-error').hidden = true;
       $('ov-users').textContent = `${data.users} of ${data.maxUsers}`;
       $('ov-signups').textContent = data.signUpsOpen ? (data.users >= data.maxUsers ? 'Paused: the site is full' : 'Open') : 'Paused (SIGNUPS=closed)';
-      $('ov-yt').textContent = data.youtubeKey ? 'Set' : 'Not set: add YOUTUBE_API_KEY in Vercel';
       $('ov-analytics').textContent = data.analytics ? 'Offered to visitors (they choose)' : 'Off';
       $('ov-watched').textContent = `${data.watched.youtube} YouTube, ${data.watched.bluesky} Bluesky`;
+      renderYouTube(data.youtube || {});
     }
+
+    // ---------- step 1: the site's YouTube API key ----------
+    const GOOGLE_LINK = /^https:\/\/console\.(cloud|developers)\.google\.com\//;
+    function addLink(box, link) {
+      if (!link || !GOOGLE_LINK.test(link)) return;
+      const a = document.createElement('a');
+      a.href = link;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.textContent = 'Open Google Cloud';
+      box.append(' ', a);
+    }
+
+    function renderYouTube(yt) {
+      const status = $('yt-status');
+      const on = Boolean(yt.using);
+      status.className = `notice ${on ? (yt.issue ? 'warn' : 'good') : 'warn'}`;
+      if (yt.using === 'site') {
+        const added = yt.saved.addedAt ? `, added ${when(yt.saved.addedAt)}` : '';
+        status.textContent = `YouTube is on. The site is using the key ending in “${yt.saved.last4}”${added}${yt.saved.earlier ? ' (on the earlier version of the site)' : ''}.`;
+      } else if (yt.using === 'vercel') {
+        status.textContent = 'YouTube is on, using the YOUTUBE_API_KEY set in Vercel. Paste a key here to use that one instead.';
+      } else {
+        status.textContent = 'YouTube is off: no API key yet. Until you add one, nobody can add a YouTube channel. Bluesky counters work already.';
+      }
+      $('ov-yt').textContent = on ? (yt.issue ? 'On, with a problem (see above)' : 'On') : 'Off: no API key yet';
+
+      const issue = $('yt-issue');
+      issue.textContent = '';
+      issue.hidden = !yt.issue;
+      if (yt.issue) {
+        const what = yt.issue.kind === 'quota' ? 'Today’s free YouTube allowance ran out' : 'Google refused the key';
+        issue.append(`${what} (${when(yt.issue.at)}): ${yt.issue.message}`);
+        addLink(issue, yt.issue.link);
+      }
+
+      $('yt-key-label').textContent = yt.using === 'site' ? 'Replace the key' : 'Paste your YouTube API key';
+      $('btn-yt-remove').hidden = yt.using !== 'site';
+      $('yt-guide').open = !on;
+    }
+
+    $('yt-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = $('yt-error');
+      const inputs = { key: $('yt-key') };
+      clearError(err, inputs);
+      $('yt-done').hidden = true;
+      const key = inputs.key.value.replace(/\s+/g, '');
+      if (!key) return showError(err, { field: 'key', message: 'Paste the API key first. The steps below show how to get one.' }, inputs);
+      const btn = $('btn-yt-save');
+      busy(btn, true, 'Checking with Google…');
+      const { status, data } = await post('/api/admin/youtube-key', { action: 'save', key });
+      busy(btn, false);
+      if (status === 403) return showLogin();
+      if (!data.ok) {
+        showError(err, data.error, inputs);
+        addLink(err, data.error && data.error.link);
+        return;
+      }
+      inputs.key.value = '';
+      inputs.key.type = 'password';
+      const toggle = document.querySelector('[data-toggle-pw="yt-key"]');
+      toggle.textContent = 'Show';
+      toggle.setAttribute('aria-pressed', 'false');
+      renderYouTube(data.youtube || {});
+      done($('yt-done'), data.note
+        ? `Saved. ${data.note}`
+        : 'Google accepted the key and it’s saved. Everyone can now add their YouTube channel, and pages that were waiting update within a minute.');
+    });
+
+    $('btn-yt-remove').addEventListener('click', async () => {
+      if (!window.confirm('Remove the saved YouTube API key? YouTube counters stop updating until you add a key again.')) return;
+      const err = $('yt-error');
+      clearError(err, { key: $('yt-key') });
+      $('yt-done').hidden = true;
+      const { status, data } = await post('/api/admin/youtube-key', { action: 'remove' });
+      if (status === 403) return showLogin();
+      if (!data.ok) return showError(err, data.error);
+      renderYouTube(data.youtube || {});
+      done($('yt-done'), 'The saved key has been removed.');
+    });
 
     $('admin-form').addEventListener('submit', async (e) => {
       e.preventDefault();

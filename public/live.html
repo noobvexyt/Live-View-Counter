@@ -22,6 +22,7 @@
     <div id="cards" class="cards"></div>
     <div id="empty" class="empty" hidden>
       <p id="empty-text">No counters to show yet.</p>
+      <button id="btn-empty-youtube" class="primary owner-only" type="button" hidden>Connect your YouTube channel</button>
       <button id="btn-empty-add" class="primary owner-only" type="button">Add a counter</button>
       <p id="empty-links" class="empty-links" hidden><a href="/">Go to the home page</a></p>
     </div>
@@ -76,6 +77,10 @@
       <p class="lede local-only">Connect your channel once. Then this page shows your total views, ticking up as new views come in.</p>
       <h1 class="hosted-only">Show your channel’s numbers</h1>
       <p class="lede hosted-only">Type your channel’s @handle. Your page then shows its official total views from YouTube, checked about once a minute. You can add subscribers, videos and Bluesky followers too.</p>
+      <div id="yt-off" class="setup-note hosted-only" role="status" hidden>
+        <p id="yt-off-text">YouTube isn’t switched on for this site yet, so channels can’t be added right now. You can count Bluesky followers in the meantime.</p>
+        <p id="yt-off-owner">Run this site? Add the YouTube API key on the <a href="/admin">Site owner page</a>, then come back here.</p>
+      </div>
 
       <form id="setup-form" class="form" novalidate>
         <label class="field">
@@ -90,7 +95,6 @@
             <button type="button" class="ghost small" data-toggle-key="in-key">Show</button>
           </div>
           <span class="field-hint local-only">Free from Google. It’s saved only on this computer.</span>
-          <span class="field-hint hosted-only">Free from Google. It’s kept in this site’s private database, never shown on the page, and only used to read your channel’s public numbers.</span>
         </div>
         <p class="fine flush hosted-only">Only public channel numbers are read, using this site’s own YouTube API key. By connecting a channel you agree to <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">YouTube’s Terms of Service</a>. See the <a href="/privacy">Privacy policy</a> for how this works.</p>
         <p id="setup-error" class="form-error" role="alert" hidden></p>
@@ -152,7 +156,7 @@
       <button type="button" role="tab" data-tab="effects">Effects</button>
       <button type="button" role="tab" data-tab="sound">Sound</button>
       <button type="button" role="tab" data-tab="stream">Stream</button>
-      <button type="button" role="tab" data-tab="app">App</button>
+      <button type="button" role="tab" data-tab="app"><span class="local-only">App</span><span class="hosted-only">Channel</span></button>
     </div>
 
     <div class="panels">
@@ -553,6 +557,7 @@
       <a href="/cookies">Cookies</a>
       <button type="button" data-cookie-settings>Cookie settings</button>
       <a href="/contact">Contact</a>
+      <a href="/admin" class="hosted-only">Site owner</a>
       <a id="report-link" href="/contact#report" hidden>Report this page</a>
     </nav>
     <p>Not affiliated with or endorsed by YouTube, Google or Bluesky.</p>

@@ -8,13 +8,16 @@
 // - Passwords are stored only as scrypt hashes. A one-time recovery code (also stored only as a hash)
 //   resets a forgotten password, so the site never needs an email address.
 // - Sessions are signed cookies. "Sign out on all devices" and changing the password end every session.
-// - Numbers: the site's own YouTube API key (YOUTUBE_API_KEY) reads every watched channel in batches of
-//   up to 50 for one quota unit, and Bluesky's public API reads profiles 25 at a time. The latest
-//   readings sit in one shared cache, so many pages and viewers cost about the same as one.
+// - Numbers: the site's own YouTube API key reads every watched channel in batches of up to 50 for one
+//   quota unit, and Bluesky's public API reads profiles 25 at a time. The latest readings sit in one
+//   shared cache, so many pages and viewers cost about the same as one. The site owner pastes the key on
+//   /admin (it's kept in the database and never sent to any browser); a YOUTUBE_API_KEY set in Vercel
+//   is used when none is saved there.
 // - Official numbers only: no estimates, pace, charts or 24-hour change (YouTube's API policies don't
 //   allow showing calculated metrics). Readings nobody has asked for in a week are dropped, and numbers
 //   that couldn't be refreshed for 30 days are deleted.
-// - The site owner (ADMIN_PASSWORD) can look up, suspend or delete an account at /admin, for reports.
+// - The site owner (ADMIN_PASSWORD) uses /admin to add the YouTube API key, and to look up, suspend or
+//   delete an account, for reports.
 
 import crypto from 'node:crypto';
 import { cmd, pipeline, kvReady } from '../src/kv.js';
@@ -26,7 +29,7 @@ import { cleanCounters } from '../src/counters.js';
 // ---------- settings from Vercel's environment variables ----------
 const env = process.env;
 const ADMIN_PASSWORD = env.ADMIN_PASSWORD || '';
-const YT_KEY = String(env.YOUTUBE_API_KEY || '').trim();
+const ENV_YT_KEY = String(env.YOUTUBE_API_KEY || '').trim(); // used when no key is saved on /admin
 const OWNER_NAME = String(env.OWNER_NAME || '').trim().slice(0, 120);
 const MAX_USERS = Math.max(1, Math.min(1_000_000, Math.floor(Number(env.MAX_USERS)) || 300));
 const SIGNUPS_OPEN = String(env.SIGNUPS || '').trim().toLowerCase() !== 'closed';
@@ -77,6 +80,7 @@ const K = {
   lock: (name) => `lvc:lock:${name}`,
   count: 'lvc:count',
   cache: 'lvc:cache',                     // the latest readings of every watched channel and profile
+  ytKey: 'lvc:ytkey',                     // the YouTube API key saved on /admin (never sent to browsers)
   cacheLock: 'lvc:cache:lock',
   rl: (bucket, id) => `lvc:rl:${bucket}:${id}`,
 };
@@ -85,6 +89,7 @@ const LEGACY_KEYS = ['lvc:settings', 'lvc:config', 'lvc:live', 'lvc:lock', 'lvc:
 
 const NO_DB = 'The site’s database isn’t connected, so accounts don’t work right now. Please try again later.';
 const UNAVAILABLE = 'YouTube numbers aren’t available on this site right now. Please try again later.';
+const NOT_SET_UP = 'YouTube isn’t switched on for this site yet, so channels can’t be added right now. Please check back soon.';
 const BUSY = 'The site is busy. Try again in a moment.';
 
 // ---------- small helpers ----------
@@ -365,8 +370,28 @@ async function isAdmin(request) {
 // ---------- the shared cache of readings ----------
 function cacheOf(text) {
   const c = parse(text, null);
-  return { yt: isObj(c && c.yt) ? c.yt : {}, bs: isObj(c && c.bs) ? c.bs : {} };
+  const out = { yt: isObj(c && c.yt) ? c.yt : {}, bs: isObj(c && c.bs) ? c.bs : {} };
+  if (c && isObj(c.keyIssue)) out.keyIssue = c.keyIssue; // the last problem Google had with the API key (for /admin)
+  return out;
 }
+
+// ---------- the site's YouTube API key ----------
+// The key saved on /admin wins; otherwise YOUTUBE_API_KEY from Vercel. Remembered for a minute per
+// server instance, so pages don't ask the database every time. Never sent to a browser.
+const KEY_RE = /^[A-Za-z0-9_-]{30,100}$/;
+let keyMemo = { at: 0, saved: null };
+function rememberKey(text) {
+  const v = parse(text, null);
+  keyMemo = { at: Date.now(), saved: isObj(v) && typeof v.key === 'string' && KEY_RE.test(v.key) ? v : null };
+  return keyMemo.saved;
+}
+async function savedKey(fresh = false) {
+  if (!kvReady()) return null;
+  if (!fresh && Date.now() - keyMemo.at < 60_000) return keyMemo.saved;
+  return rememberKey(await cmd('GET', K.ytKey));
+}
+const keyToUse = (saved) => (saved && saved.key) || ENV_YT_KEY;
+const siteKey = async (fresh = false) => keyToUse(await savedKey(fresh).catch(() => keyMemo.saved));
 
 // What an account's page needs read: its YouTube channel and its Bluesky profiles.
 function wantsOf(rec) {
@@ -403,17 +428,18 @@ const ytInfo = (info) => ({
   id: info.id, title: info.title, handle: info.handle, thumb: info.thumb, subs: info.subs, videoCount: info.videoCount, views: info.viewCount,
 });
 
-async function readYouTube(cache, ids, now) {
+async function readYouTube(cache, ids, now, apiKey) {
   if (!ids.length) return;
-  if (!YT_KEY) {
+  if (!apiKey) {
     for (const id of ids) setFailed(cache.yt[id], 'unavailable', UNAVAILABLE, now);
     return;
   }
-  const yt = createYouTube({ apiKey: YT_KEY, base: YT_BASE, timeoutMs: 12_000 });
+  const yt = createYouTube({ apiKey, base: YT_BASE, timeoutMs: 12_000 });
   for (let i = 0; i < ids.length; i += 50) {
     const chunk = ids.slice(i, i + 50);
     try {
       const res = await yt.channels({ part: 'snippet,statistics', id: chunk.join(','), maxResults: 50 });
+      delete cache.keyIssue;
       const found = new Map((Array.isArray(res && res.items) ? res.items : []).map((it) => [it.id, it]));
       for (const id of chunk) {
         const item = found.get(id);
@@ -427,6 +453,9 @@ async function readYouTube(cache, ids, now) {
       let k = kind;
       if (kind === 'quota') message = 'This site has used up today’s YouTube allowance. Numbers update again after midnight Pacific time.';
       else if (kind === 'auth' || kind === 'bad' || kind === 'notFound') { message = UNAVAILABLE; k = 'unavailable'; }
+      if (kind === 'quota' || kind === 'auth' || kind === 'bad') {
+        cache.keyIssue = { kind, message: String(err.message || '').slice(0, 300), link: err.link || '', at: now };
+      }
       for (const id of chunk) setFailed(cache.yt[id], k, message, now);
     }
   }
@@ -499,13 +528,15 @@ async function readNow(wants, now, change) {
   const id = await lock(K.cacheLock, 0);
   if (!id) return null;
   try {
-    const cache = cacheOf(await cmd('GET', K.cache));
+    const [cacheText, keyText] = await cmd('MGET', K.cache, K.ytKey); // (one command for both)
+    const cache = cacheOf(cacheText);
+    const apiKey = keyToUse(rememberKey(keyText));
     if (change) change(cache);
     for (const cid of wants.yt) (cache.yt[cid] = isObj(cache.yt[cid]) ? cache.yt[cid] : {}).wantAt = now;
     for (const h of wants.bs) (cache.bs[h] = isObj(cache.bs[h]) ? cache.bs[h] : {}).wantAt = now;
     // (Things due in the next 20 seconds are read too, so they line up and are read together.)
     const due = (map) => Object.keys(map).filter((k) => now - (map[k].wantAt || 0) <= WANT_MS && now + 20_000 >= (map[k].nextAt || 0));
-    await Promise.all([readYouTube(cache, due(cache.yt).slice(0, 500), now), readBluesky(cache, due(cache.bs).slice(0, 250), now)]);
+    await Promise.all([readYouTube(cache, due(cache.yt).slice(0, 500), now, apiKey), readBluesky(cache, due(cache.bs).slice(0, 250), now)]);
     prune(cache, now);
     await cmd('SET', K.cache, JSON.stringify(cache));
     return cache;
@@ -621,7 +652,7 @@ async function handleConfig(request) {
     signUp: SIGNUPS_OPEN && kvReady(),
     owner: OWNER_NAME,
     envKey: true,                  // nobody pastes API keys on the website
-    ytAvailable: Boolean(YT_KEY),
+    ytAvailable: Boolean(await siteKey()),
     platforms: PLATFORMS,
     analytics: ANALYTICS,
     lan: false,
@@ -932,14 +963,15 @@ async function handleConnect(request) {
   guard(request);
   const { rec } = await requireUser(request);
   notSuspended(rec);
-  if (!YT_KEY) throw new UserError(UNAVAILABLE, 'channel', 503);
+  const apiKey = await siteKey(true);
+  if (!apiKey) throw new UserError(NOT_SET_UP, null, 503, { kind: 'notSetUp' });
   const body = await readBody(request);
   const input = String(body.channel || '').trim().slice(0, 300);
   if (!input) throw new UserError('Enter your channel’s @handle or a link to it.', 'channel');
   await spendLookup(rec.name);
   let info;
   try {
-    info = ytInfo(channelInfo(await findChannel(createYouTube({ apiKey: YT_KEY, base: YT_BASE, timeoutMs: 12_000 }), input)));
+    info = ytInfo(channelInfo(await findChannel(createYouTube({ apiKey, base: YT_BASE, timeoutMs: 12_000 }), input)));
   } catch (e) {
     if (!(e instanceof YouTubeError)) throw e;
     if (e.kind === 'notFound' || e.kind === 'bad') return fail(400, e.message, { field: 'channel', kind: e.kind });
@@ -974,7 +1006,7 @@ async function handleCheckAccount(request) {
   notSuspended(rec);
   const body = await readBody(request, 4_096);
   if (String(body.platform || '') !== 'bluesky') {
-    throw new UserError('On this site you can add Bluesky profiles here, and your YouTube channel under App.');
+    throw new UserError('On this site you can add Bluesky profiles here, and your YouTube channel under the Channel tab.');
   }
   const handle = normalizeHandle('bluesky', body.handle);
   if (!handle) throw new UserError('That doesn’t look like a Bluesky name. Paste the profile link or the name, like yourname.bsky.social.', 'handle');
@@ -1071,6 +1103,14 @@ async function handleAdminOverview(request) {
     cursor = String(next);
     if (cursor === '0') break;
   }
+  // A key pasted into the single-owner version of the site is kept, rather than deleted with it.
+  const [oldConfig, savedText] = await cmd('MGET', 'lvc:config', K.ytKey);
+  const old = parse(oldConfig, null);
+  if (!rememberKey(savedText) && isObj(old) && typeof old.apiKey === 'string' && KEY_RE.test(old.apiKey.trim())) {
+    const key = old.apiKey.trim();
+    await cmd('SET', K.ytKey, JSON.stringify({ key, addedAt: Date.now(), last4: key.slice(-4), earlier: true }), 'NX');
+    await savedKey(true);
+  }
   await pipeline([['SET', K.count, users], ['DEL', ...LEGACY_KEYS]]);
   const cache = cacheOf(await cmd('GET', K.cache));
   return json(200, {
@@ -1078,10 +1118,70 @@ async function handleAdminOverview(request) {
     users,
     maxUsers: MAX_USERS,
     signUpsOpen: SIGNUPS_OPEN,
-    youtubeKey: Boolean(YT_KEY),
+    youtube: youtubeStatus(keyMemo.saved, cache),
     analytics: ANALYTICS,
     watched: { youtube: Object.keys(cache.yt).length, bluesky: Object.keys(cache.bs).length },
   });
+}
+
+// What /admin shows about the YouTube key. Only its last 4 characters ever leave the server.
+function youtubeStatus(saved, cache) {
+  const issue = cache && isObj(cache.keyIssue) ? cache.keyIssue : null;
+  return {
+    using: saved ? 'site' : ENV_YT_KEY ? 'vercel' : null,
+    saved: saved ? { last4: String(saved.last4 || saved.key.slice(-4)), addedAt: saved.addedAt || null, earlier: Boolean(saved.earlier) } : null,
+    vercel: Boolean(ENV_YT_KEY),
+    issue: issue && (saved || ENV_YT_KEY) ? { kind: issue.kind, message: issue.message, link: issue.link || '', at: issue.at } : null,
+  };
+}
+
+// Checks a pasted key with Google (1 unit of its free daily allowance), then saves it, or removes it.
+const KEY_TEST_CHANNEL = 'UC_x5XG1OV2P6uZZ5FSM9Ttw'; // Google for Developers: any answer at all means the key works
+async function handleAdminYouTubeKey(request) {
+  guard(request);
+  await requireAdmin(request);
+  const body = await readBody(request, 2_048);
+  const action = String(body.action || '');
+  if (action === 'remove') {
+    await cmd('DEL', K.ytKey);
+    rememberKey(null);
+    return json(200, { ok: true, youtube: youtubeStatus(null, cacheOf(await cmd('GET', K.cache))) });
+  }
+  if (action !== 'save') throw new UserError('Bad request.');
+  const key = String(body.key || '').replace(/\s+/g, '');
+  if (!key) throw new UserError('Paste the API key first.', 'key');
+  if (!KEY_RE.test(key)) {
+    throw new UserError('That doesn’t look like an API key. It’s one long piece of text with no spaces, about 39 characters, and usually starts with “AIza”.', 'key');
+  }
+  let note = '';
+  try {
+    await createYouTube({ apiKey: key, base: YT_BASE, timeoutMs: 12_000 }).channels({ part: 'id', id: KEY_TEST_CHANNEL, maxResults: 1 });
+  } catch (e) {
+    if (!(e instanceof YouTubeError)) throw e;
+    if (e.kind === 'quota') note = 'Google says this key’s free allowance for today is used up, so numbers start after midnight Pacific time.';
+    else if (e.kind === 'network' || e.kind === 'server' || e.kind === 'rate') {
+      return fail(503, 'Couldn’t reach YouTube to check the key. Try again in a minute.', { kind: e.kind });
+    } else return fail(400, e.message, { field: 'key', kind: e.kind, ...(e.link ? { link: e.link } : {}) });
+  }
+  const saved = { key, addedAt: Date.now(), last4: key.slice(-4) };
+  await cmd('SET', K.ytKey, JSON.stringify(saved));
+  rememberKey(JSON.stringify(saved));
+  // Channels that couldn't be read without a working key are read again straight away.
+  let cache = null;
+  const id = await lock(K.cacheLock, 5_000);
+  if (id) {
+    try {
+      cache = cacheOf(await cmd('GET', K.cache));
+      if (!note) delete cache.keyIssue;
+      for (const e of Object.values(cache.yt)) {
+        if (isObj(e) && e.error && (e.error.kind === 'unavailable' || (!note && e.error.kind === 'quota'))) e.nextAt = 0;
+      }
+      await cmd('SET', K.cache, JSON.stringify(cache));
+    } finally {
+      await unlock(K.cacheLock, id);
+    }
+  }
+  return json(200, { ok: true, note, youtube: youtubeStatus(saved, cache || cacheOf(await cmd('GET', K.cache))) });
 }
 
 async function handleAdminUser(request) {
@@ -1190,6 +1290,7 @@ async function route(request) {
   if (post && path === 'admin/login') return handleAdminLogin(request);
   if (read && path === 'admin/overview') return handleAdminOverview(request);
   if (post && path === 'admin/user') return handleAdminUser(request);
+  if (post && path === 'admin/youtube-key') return handleAdminYouTubeKey(request);
   return notFound();
 }
 
