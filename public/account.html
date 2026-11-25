@@ -113,7 +113,7 @@
             <h2 id="key-title">Your YouTube API key</h2>
             <p id="key-text" class="mt-0"></p>
             <p id="key-status" class="key-status" role="status" hidden></p>
-            <form id="key-form" class="form mt-s" novalidate>
+            <form id="key-form" class="form mt-s" method="post" novalidate>
               <div class="field">
                 <label class="field-label" for="key-input" id="key-label">Paste your API key</label>
                 <div class="pw-row">
@@ -158,7 +158,7 @@
           <!-- Password -->
           <section id="sec-password" class="acct-section" aria-labelledby="pw-title">
             <h2 id="pw-title">Change your password</h2>
-            <form id="pw-form" class="form" novalidate>
+            <form id="pw-form" class="form" method="post" novalidate>
               <input type="text" name="username" autocomplete="username" class="hp" tabindex="-1" aria-hidden="true" id="pw-username">
               <div class="field">
                 <label class="field-label" for="pw-current">Current password</label>
@@ -183,7 +183,7 @@
           <section id="sec-recovery" class="acct-section" aria-labelledby="rc-title">
             <h2 id="rc-title">Recovery code</h2>
             <p>Your recovery code lets you back in if you forget your password. If you’ve lost it, or think someone else has seen it, make a new one. The old one stops working straight away.</p>
-            <form id="rc-form" class="form" novalidate>
+            <form id="rc-form" class="form" method="post" novalidate>
               <div class="field">
                 <label class="field-label" for="rc-password">Your password</label>
                 <input id="rc-password" type="password" autocomplete="current-password" maxlength="200" required>
@@ -234,7 +234,7 @@
   </main>
 
   <dialog id="delete-dialog" class="confirm" aria-labelledby="dd-title">
-    <form id="delete-form" class="form mt-0" novalidate>
+    <form id="delete-form" class="form mt-0" method="post" novalidate>
       <h2 id="dd-title">Delete your account?</h2>
       <p class="mt-0">Your account, page and settings are deleted for good. Copies of a public page kept by our hosting provider can take up to 2 minutes to disappear.</p>
       <div class="field">

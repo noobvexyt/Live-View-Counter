@@ -45,7 +45,7 @@
           <p id="signed-in-note" class="notice" hidden>You’re already signed in as <b data-user-name></b>. <a href="/account" data-user-page>Open your page</a> or <a href="/account">go to your account</a>.</p>
           <p id="closed-note" class="notice warn" hidden></p>
   
-          <form id="signup-form" class="form" novalidate>
+          <form id="signup-form" class="form" method="post" novalidate>
             <div class="field">
               <label class="field-label" for="su-username">Username</label>
               <input id="su-username" name="username" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="24" aria-describedby="su-username-hint" required>

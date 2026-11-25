@@ -340,7 +340,7 @@
   // ---------- account ----------
   async function account(cfg) {
     const toSignIn = () => location.replace('/signin?next=/account');
-    if (!cfg.offline && !cfg.user) return toSignIn();
+    // The server decides who's signed in, so a page script that failed elsewhere can't cause a loop.
     const { status, data } = await get('/api/me');
     if (status === 401) return toSignIn();
     $('loading').hidden = true;

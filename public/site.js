@@ -158,7 +158,11 @@
       if (e.key === 'Escape' && head.classList.contains('open')) { set(false); btn.focus(); }
     });
     document.addEventListener('click', (e) => { if (!head.contains(e.target)) set(false); });
-    window.matchMedia('(min-width: 821px)').addEventListener('change', (m) => { if (m.matches) set(false); });
+    // Older Safari only has addListener here.
+    const wide = window.matchMedia ? window.matchMedia('(min-width: 821px)') : null;
+    const onWide = (m) => { if (m.matches) set(false); };
+    if (wide && wide.addEventListener) wide.addEventListener('change', onWide);
+    else if (wide && wide.addListener) wide.addListener(onWide);
   }
 
   const still = Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -176,7 +180,11 @@
     for (const group of document.querySelectorAll('[data-stagger]')) {
       [...group.children].forEach((c, i) => c.style.setProperty('--i', String(i)));
     }
-    seen(document.querySelectorAll('.reveal'), (el) => el.classList.add('in'));
+    const els = document.querySelectorAll('.reveal');
+    // Sections only start hidden once this is running, so they can never get stuck invisible.
+    if (still || !els.length || !('IntersectionObserver' in window)) return;
+    seen(els, (el) => el.classList.add('in'));
+    document.documentElement.classList.add('motion');
   }
 
   // Numbers that count up (or down, with data-from) when they come into view.
@@ -280,8 +288,6 @@
     }
   }
 
-  if (document.body && document.body.dataset.page) { wireMenu(); wireMotion(); wireReveal(); wireCounts(); wireTickers(); }
-
   function wire() {
     ensureBanner();
     $('consent-reject').addEventListener('click', () => decide({ fonts: false, analytics: false }));
@@ -348,5 +354,16 @@
     get config() { return config; },
   };
 
-  if (document.body && document.body.dataset.page) boot();
+  // The parts pages depend on (settings, who's signed in, the ready signal pages.js waits for) start
+  // first. The menu and the visual extras come after, each on its own, so one failing in an older
+  // browser can never stop sign-in, sign-up or the account page from working.
+  if (document.body && document.body.dataset.page) {
+    boot();
+    const safe = (fn) => { try { fn(); } catch (e) { console.error(e); } };
+    safe(wireMenu);
+    safe(wireMotion);
+    safe(wireReveal);
+    safe(wireCounts);
+    safe(wireTickers);
+  }
 })();

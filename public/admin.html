@@ -44,7 +44,7 @@
 
       <section id="admin-login" class="panel thin" aria-labelledby="al-title" hidden>
         <h2 id="al-title" class="mt-0">Owner sign-in</h2>
-        <form id="admin-form" class="form" novalidate>
+        <form id="admin-form" class="form" method="post" novalidate>
           <input type="text" name="username" autocomplete="username" value="site-owner" class="hp" tabindex="-1" aria-hidden="true">
           <div class="field">
             <label class="field-label" for="ad-password">Owner password</label>
@@ -67,7 +67,7 @@
             <p class="muted">Everyone pastes their own free YouTube API key when they add their channel, so the site works without this. If you add a key here, people can skip that step: channels added without a key of their own are read with this one.</p>
             <p id="yt-status" class="notice" role="status">Checking…</p>
             <div id="yt-issue" class="notice bad mt-s" hidden></div>
-            <form id="yt-form" class="form" novalidate>
+            <form id="yt-form" class="form" method="post" novalidate>
               <div class="field">
                 <label class="field-label" for="yt-key"><span id="yt-key-label">Paste a shared YouTube API key</span></label>
                 <div class="pw-row">
@@ -117,7 +117,7 @@
 
         <section class="acct-section" aria-labelledby="find-title">
           <h2 id="find-title">Find an account</h2>
-          <form id="find-form" class="form" novalidate>
+          <form id="find-form" class="form" method="post" novalidate>
             <div class="field">
               <label class="field-label" for="find-name">Username or page address</label>
               <input id="find-name" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="120" placeholder="yourname or https://…/u/yourname" required>

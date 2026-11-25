@@ -87,7 +87,7 @@
       <h1 class="hosted-only">Show your channel’s numbers</h1>
       <p class="lede hosted-only">Type your channel’s @handle and paste your free YouTube API key. Your page then shows the channel’s official total views from YouTube, checked about once a minute. You can add subscribers, videos and Bluesky followers too.</p>
 
-      <form id="setup-form" class="form" novalidate>
+      <form id="setup-form" class="form" method="post" novalidate>
         <label class="field">
           <span class="field-label">Your channel</span>
           <input id="in-channel" type="text" placeholder="@yourhandle or your channel link" autocomplete="off" autocapitalize="off" spellcheck="false">
@@ -177,7 +177,7 @@
 
         <section class="sheet-section">
           <h3>Add a counter</h3>
-          <form id="add-form" class="form" novalidate>
+          <form id="add-form" class="form" method="post" novalidate>
             <div id="add-platforms" class="chips" role="radiogroup" aria-label="Platform"></div>
             <label id="add-handle-field" class="field">
               <span class="field-label">Account</span>
@@ -467,7 +467,7 @@
       <div class="panel" role="tabpanel" data-panel="app" hidden>
         <section class="sheet-section">
           <h3>YouTube channel and API key</h3>
-          <form id="settings-form" class="form" novalidate>
+          <form id="settings-form" class="form" method="post" novalidate>
             <label class="field">
               <span class="field-label">Channel</span>
               <input id="set-channel" type="text" placeholder="@yourhandle or your channel link" autocomplete="off" autocapitalize="off" spellcheck="false">
