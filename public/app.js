@@ -1288,6 +1288,15 @@
       $('in-key-hint').textContent = 'Free from Google: the steps below show how to get one (about 3 minutes). It’s kept with your account in this site’s private database, never shown on any page, and only used to read your channel’s public numbers.';
     }
     $('key-guide').open = keyNeeded();
+    const status = $('in-key-status');
+    status.hidden = !CFG.keyHint;
+    if (CFG.keyHint) status.textContent = `Your API key is saved (ending ${CFG.keyHint.replace(/^…/, '')}).`;
+  }
+  // A short "it worked" pulse on a key status line.
+  function flashStatus(el) {
+    el.classList.remove('flash');
+    void el.offsetWidth; // (restarts the animation)
+    el.classList.add('flash');
   }
 
   $('setup-form').addEventListener('submit', async (e) => {
@@ -1310,9 +1319,16 @@
     btn.textContent = 'Start counting';
     if (!res.ok) {
       if (res.error && res.error.field === 'apiKey') $('key-guide').open = true;
+      if (HOSTED && res.error && res.error.keySaved) {
+        // The key worked and was kept: only the channel needs fixing.
+        renderKeyField({ keyHint: res.error.keyHint || '' });
+        inputs.apiKey.value = '';
+        flashStatus($('in-key-status'));
+        return showError($('setup-error'), { ...res.error, message: `${res.error.message} Your API key was saved, so just fix the channel.` }, inputs);
+      }
       return showError($('setup-error'), res.error || {}, inputs);
     }
-    if (HOSTED && typeof res.keyHint === 'string') renderKeyField({ keyHint: res.keyHint });
+    if (HOSTED && typeof res.keyHint === 'string') { renderKeyField({ keyHint: res.keyHint }); if (key) flashStatus($('in-key-status')); }
     inputs.apiKey.value = '';
     for (const i of Object.values(inputs)) i.classList.remove('invalid');
     if (res.state) applySnapshot(res.state); // website: show the channel straight away

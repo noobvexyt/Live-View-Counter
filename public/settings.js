@@ -628,6 +628,12 @@
       if (keyNeeded && !c.configured) $('set-key-guide').open = true;
     }
     $('btn-disconnect').hidden = !c.configured && !c.keyHint;
+    if (A.hosted) {
+      const status = $('set-key-status');
+      status.hidden = !c.keyHint;
+      if (c.keyHint) status.textContent = `Your API key is saved (ending ${c.keyHint.replace(/^…/, '')}).`;
+      $('btn-remove-key').hidden = !c.keyHint;
+    }
     if (A.hosted && c.user) {
       const pub = Boolean(c.user.public);
       $('page-visibility').textContent = pub
@@ -678,14 +684,40 @@
     const res = await A.postJson(A.api('connect'), body);
     btn.disabled = false;
     btn.textContent = 'Save';
-    if (!res.ok) return A.showError($('settings-error'), res.error || {}, inputs);
+    if (!res.ok) {
+      if (A.hosted && res.error && res.error.keySaved) {
+        // The key worked and was kept: only the channel needs fixing.
+        inputs.apiKey.value = '';
+        await loadConfig();
+        flash($('set-key-status'));
+        return A.showError($('settings-error'), { ...res.error, message: `${res.error.message} Your API key was saved, so just fix the channel.` }, inputs);
+      }
+      return A.showError($('settings-error'), res.error || {}, inputs);
+    }
     $('settings-error').hidden = true;
     inputs.apiKey.value = '';
+    btn.textContent = 'Saved ✓';
+    setTimeout(() => { btn.textContent = 'Save'; }, 1800);
     if (res.state) A.applySnapshot(res.state);
     if (!A.S.counters.some((c) => c.platform === 'youtube')) {
       A.setCounters([{ id: newId('yt-views'), platform: 'youtube', metric: 'views' }, ...A.S.counters]);
       renderCounterList();
     }
+    await loadConfig();
+    if (key) flash($('set-key-status'));
+  });
+  function flash(el) {
+    el.classList.remove('flash');
+    void el.offsetWidth; // (restarts the animation)
+    el.classList.add('flash');
+  }
+
+  // Website: remove just the key (the channel stays, read with the site's shared key if there is one).
+  $('btn-remove-key').addEventListener('click', async () => {
+    if (!window.confirm('Remove your saved API key? Your channel stays connected. Without your key, it’s read with this site’s shared key if there is one.')) return;
+    const res = await A.postJson(A.api('key'), { action: 'remove' });
+    if (!res.ok) return A.showError($('settings-error'), res.error || {}, {});
+    if (res.state) A.applySnapshot(res.state);
     loadConfig();
   });
 

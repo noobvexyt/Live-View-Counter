@@ -101,6 +101,7 @@
           </div>
           <span class="field-hint local-only">Free from Google. It’s saved only on this computer.</span>
           <span id="in-key-hint" class="field-hint hosted-only">Free from Google: the steps below show how to get one (about 3 minutes). It’s kept with your account in this site’s private database, never shown on any page, and only used to read your channel’s public numbers.</span>
+          <p id="in-key-status" class="key-status hosted-only" role="status" hidden></p>
         </div>
         <p class="fine flush hosted-only">Only public channel numbers are read. By connecting a channel you agree to <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">YouTube’s Terms of Service</a>, and a key you paste must be from your own Google Cloud project. See the <a href="/privacy">Privacy policy</a> for how this works.</p>
         <p id="setup-error" class="form-error" role="alert" hidden></p>
@@ -478,6 +479,7 @@
                 <button type="button" class="ghost small" data-toggle-key="set-key">Show</button>
               </div>
               <span id="set-key-hint" class="field-hint">Leave empty to keep the saved key.</span>
+              <p id="set-key-status" class="key-status hosted-only" role="status" hidden></p>
             </div>
             <p id="set-key-env" class="fine flush local-only" hidden>Using the YOUTUBE_API_KEY set in Vercel’s environment variables.</p>
             <details id="set-key-guide" class="guide tight hosted-only">
@@ -492,6 +494,7 @@
             <p id="settings-error" class="form-error" role="alert" hidden></p>
             <div class="row">
               <button id="btn-save" class="primary" type="submit">Save</button>
+              <button id="btn-remove-key" class="ghost hosted-only" type="button" hidden>Remove my key</button>
               <button id="btn-disconnect" class="ghost danger" type="button">Disconnect</button>
             </div>
           </form>

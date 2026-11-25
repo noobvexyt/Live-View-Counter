@@ -161,17 +161,126 @@
     window.matchMedia('(min-width: 821px)').addEventListener('change', (m) => { if (m.matches) set(false); });
   }
 
-  // Sections that fade in as they scroll into view (home page).
-  function wireReveal() {
-    const els = document.querySelectorAll('.reveal');
+  const still = Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const seen = (els, fn, margin = '0px 0px -8% 0px') => {
     if (!els.length) return;
-    if (!('IntersectionObserver' in window)) { for (const el of els) el.classList.add('in'); return; }
+    if (!('IntersectionObserver' in window)) { for (const el of els) fn(el); return; }
     const io = new IntersectionObserver((entries) => {
-      for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-    }, { rootMargin: '0px 0px -8% 0px' });
+      for (const e of entries) if (e.isIntersecting) { fn(e.target); io.unobserve(e.target); }
+    }, { rootMargin: margin });
     for (const el of els) io.observe(el);
+  };
+
+  // Sections that rise in as they scroll into view; children of [data-stagger] follow one by one.
+  function wireReveal() {
+    for (const group of document.querySelectorAll('[data-stagger]')) {
+      [...group.children].forEach((c, i) => c.style.setProperty('--i', String(i)));
+    }
+    seen(document.querySelectorAll('.reveal'), (el) => el.classList.add('in'));
   }
-  if (document.body && document.body.dataset.page) { wireMenu(); wireReveal(); }
+
+  // Numbers that count up (or down, with data-from) when they come into view.
+  function wireCounts() {
+    const fmt = (n) => Math.round(n).toLocaleString('en-GB');
+    const els = [...document.querySelectorAll('[data-count]')];
+    for (const el of els) el.textContent = fmt(still ? Number(el.dataset.count) : Number(el.dataset.from || 0));
+    if (still) return;
+    seen(els, (el) => {
+      const to = Number(el.dataset.count);
+      const from = Number(el.dataset.from || 0);
+      const ms = Number(el.dataset.ms || 1800);
+      const t0 = performance.now();
+      const step = (t) => {
+        const p = Math.min(1, (t - t0) / ms);
+        el.textContent = fmt(from + (to - from) * (1 - Math.pow(1 - p, 4)));
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }, '0px 0px -12% 0px');
+  }
+
+  // Small example numbers that tick up now and then ([data-tick]="step size").
+  function wireTickers() {
+    if (still) return;
+    for (const el of document.querySelectorAll('[data-tick]')) {
+      let v = Number(String(el.textContent).replace(/[^\d]/g, '')) || 0;
+      const step = Math.max(1, Number(el.dataset.tick) || 1);
+      const go = () => {
+        if (!document.hidden) {
+          v += step + Math.floor(Math.random() * step * 2);
+          el.textContent = v.toLocaleString('en-GB');
+          el.classList.remove('bump');
+          void el.offsetWidth;
+          el.classList.add('bump');
+        }
+        setTimeout(go, 1600 + Math.random() * 1800);
+      };
+      setTimeout(go, 1200 + Math.random() * 1000);
+    }
+  }
+
+  // The moving background, a scroll bar, the header's look once you scroll, the light that follows the
+  // cursor over cards, and the 3D tilt of the example page.
+  function wireMotion() {
+    if (!document.querySelector('.bg-fx')) {
+      const fx = document.createElement('div');
+      fx.className = 'bg-fx';
+      fx.setAttribute('aria-hidden', 'true');
+      fx.innerHTML = '<span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span><span class="grid-floor"></span><span class="noise"></span>';
+      document.body.prepend(fx);
+    }
+    const bar = document.createElement('div');
+    bar.className = 'scroll-bar';
+    bar.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(bar);
+    const head = document.querySelector('.site-head');
+    let queued = false;
+    const onScroll = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        bar.style.transform = `scaleX(${max > 0 ? Math.min(1, window.scrollY / max) : 0})`;
+        if (head) head.classList.toggle('scrolled', window.scrollY > 8);
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    onScroll();
+    if (still) return;
+
+    document.addEventListener('pointermove', (e) => {
+      const el = e.target && e.target.closest && e.target.closest('.card, .acct-section, .bento-card');
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', `${e.clientX - r.left}px`);
+      el.style.setProperty('--my', `${e.clientY - r.top}px`);
+    }, { passive: true });
+
+    for (const el of document.querySelectorAll('[data-tilt]')) {
+      const area = el.closest('[data-tilt-area]') || el.parentElement;
+      let frame = 0;
+      area.addEventListener('pointermove', (e) => {
+        if (e.pointerType === 'touch') return;
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+          const r = area.getBoundingClientRect();
+          const x = (e.clientX - r.left) / r.width - 0.5;
+          const y = (e.clientY - r.top) / r.height - 0.5;
+          el.style.setProperty('--rx', `${(x * 14).toFixed(2)}deg`);
+          el.style.setProperty('--ry', `${(-y * 10).toFixed(2)}deg`);
+        });
+      });
+      area.addEventListener('pointerleave', () => {
+        cancelAnimationFrame(frame);
+        el.style.setProperty('--rx', '0deg');
+        el.style.setProperty('--ry', '0deg');
+      });
+    }
+  }
+
+  if (document.body && document.body.dataset.page) { wireMenu(); wireMotion(); wireReveal(); wireCounts(); wireTickers(); }
 
   function wire() {
     ensureBanner();

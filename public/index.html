@@ -34,85 +34,160 @@
     </div>
   </header>
 
+
   <main id="main">
-    <div class="hero-wrap">
+    <div class="hero-wrap" data-tilt-area>
       <div class="wrap">
         <section class="hero">
           <div>
-            <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Free · No email needed · Ready for OBS</span>
-            <h1>Your channel’s numbers, <span class="grad-text">counting live.</span></h1>
-            <p class="lede">Make a page that shows your YouTube views, subscribers and videos, and your Bluesky followers, as big rolling counters. Keep it on a spare screen, or put it on your stream.</p>
-            <div class="btn-row">
-              <a class="btn large" href="/signup" data-when-guest>Make your page free <span class="arrow" aria-hidden="true">→</span></a>
-              <a class="btn large ghost" href="#how" data-when-guest>How it works</a>
+            <span class="eyebrow fade-up" style="--d:0s"><span class="tag">FREE</span><span class="live-dot" aria-hidden="true"></span>Live counters for YouTube and Bluesky</span>
+            <h1 class="rise">
+              <span class="line"><span class="w" style="--i:0">Every</span> <span class="w" style="--i:1">view.</span></span>
+              <span class="line"><span class="w" style="--i:2">Every</span> <span class="w" style="--i:3">sub.</span></span>
+              <span class="line"><span class="w" style="--i:4"><span class="grad-text">Counting live.</span></span></span>
+            </h1>
+            <p class="lede fade-up" style="--d:.55s">Turn your YouTube views, subscribers and Bluesky followers into big, rolling counters that look amazing on a second screen and even better on stream. Free, private, and ready in minutes.</p>
+            <div class="btn-row fade-up" style="--d:.7s">
+              <a class="btn large" href="/signup" data-when-guest>Start counting free <span class="arrow" aria-hidden="true">→</span></a>
+              <a class="btn large ghost" href="#features" data-when-guest>See what it does</a>
               <a class="btn large" href="/account" data-user-page data-when-user hidden>Open my page <span class="arrow" aria-hidden="true">→</span></a>
               <a class="btn large ghost" href="/account" data-when-user hidden>My account</a>
             </div>
-            <ul class="trust">
+            <ul class="trust fade-up" style="--d:.85s">
               <li><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></svg>Official YouTube numbers</li>
-              <li><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></svg>Private until you share it</li>
               <li><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></svg>No email, no card</li>
+              <li><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></svg>Private until you share it</li>
             </ul>
           </div>
-          <div>
-            <div class="window" aria-label="An example counter page" role="img">
-              <div class="window-bar" aria-hidden="true">
-                <div class="window-dots"><span></span><span></span><span></span></div>
-                <div class="window-url"><span id="demo-host">your-site</span>/u/yourname</div>
+          <div class="fade-up" style="--d:.3s">
+            <div class="stage">
+              <div class="float">
+                <div class="window" data-tilt role="img" aria-label="An example counter page">
+                  <div class="window-bar" aria-hidden="true">
+                    <div class="window-dots"><span></span><span></span><span></span></div>
+                    <div class="window-url"><span id="demo-host">your-site</span>/u/yourname</div>
+                  </div>
+                  <div class="window-body" aria-hidden="true">
+                    <span class="demo-status"><span class="live-dot"></span>Checked just now</span>
+                    <div>
+                      <div class="demo-avatar">Y</div>
+                      <div class="demo-name">Your channel</div>
+                      <div id="demo-number" class="demo-number">1,284,519</div>
+                      <div class="demo-label">Total views</div>
+                    </div>
+                    <div class="demo-tiles">
+                      <div class="demo-tile"><b id="demo-subs">48,200</b><span>Subscribers</span></div>
+                      <div class="demo-tile"><b id="demo-sky">3,417</b><span>Bluesky followers</span></div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="window-body" aria-hidden="true">
-                <span class="demo-status"><span class="live-dot"></span>Checked just now</span>
-                <div>
-                  <div class="demo-avatar">Y</div>
-                  <div class="demo-name">Your channel</div>
-                  <div id="demo-number" class="demo-number">1,284,519</div>
-                  <div class="demo-label">Total views</div>
-                </div>
-                <div class="demo-tiles">
-                  <div class="demo-tile"><b id="demo-subs">48,200</b><span>Subscribers</span></div>
-                  <div class="demo-tile"><b id="demo-sky">3,417</b><span>Bluesky followers</span></div>
-                </div>
+              <div class="chip c1" aria-hidden="true">
+                <span class="ico"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m3 17 6-6 4 4 8-8M15 7h6v6"/></svg></span>
+                <span>+<span id="chip-today">1,204</span> views<small>Today</small></span>
+                <svg class="spark" viewBox="0 0 54 22"><path fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" d="M1 19 9 15l6 3 8-8 7 4 9-9 6 3 7-6"/></svg>
+              </div>
+              <div class="chip c2" aria-hidden="true">
+                <span class="ico"><svg viewBox="0 0 24 24"><path fill="currentColor" d="m12 2.8 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg></span>
+                <span>Milestone hit<small>50,000 subscribers</small></span>
+              </div>
+              <div class="chip c3" aria-hidden="true">
+                <span class="ico"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M3 6h18v12H3zM10 10l4 2-4 2z"/></svg></span>
+                <span>Live in OBS<small>Overlay on</small></span>
+              </div>
+              <div class="chip c4" aria-hidden="true">
+                <span class="ico"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M16 11a4 4 0 1 0-8 0M4 20a8 8 0 0 1 16 0M19 8v6M16 11h6"/></svg></span>
+                <span>+<span data-tick="1">12</span> followers<small>Bluesky</small></span>
               </div>
             </div>
             <p class="demo-note">An example page. Real pages show official numbers, checked about once a minute.</p>
           </div>
         </section>
       </div>
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee-track">
+          <span>Total views</span><span>Subscribers</span><span>Videos</span><span>Bluesky followers</span><span>3D rolling digits</span><span>Tick sounds</span><span>Milestone confetti</span><span>Goals</span><span>Your fonts and colours</span><span>OBS overlay</span><span>Grids and rotating counters</span><span>Private by default</span>
+          <span>Total views</span><span>Subscribers</span><span>Videos</span><span>Bluesky followers</span><span>3D rolling digits</span><span>Tick sounds</span><span>Milestone confetti</span><span>Goals</span><span>Your fonts and colours</span><span>OBS overlay</span><span>Grids and rotating counters</span><span>Private by default</span>
+        </div>
+      </div>
     </div>
 
     <div class="wrap">
-      <section id="features" class="section reveal" aria-labelledby="features-title">
-        <div class="section-head">
-          <p class="kicker">Features</p>
-          <h2 id="features-title">Everything your counter needs</h2>
-          <p>One page for your numbers, made to look good full screen and on stream.</p>
+      <section class="reveal" aria-label="Live View Counter in numbers">
+        <div class="stats" data-stagger>
+          <div class="stat"><b><span data-count="5">5</span><small>min</small></b><span>to set up your page</span></div>
+          <div class="stat"><b><span data-count="60">60</span><small>s</small></b><span>between official YouTube checks</span></div>
+          <div class="stat"><b><span data-count="3">3</span></b><span>layouts: one big number, a grid, or taking turns</span></div>
+          <div class="stat"><b>£<span data-count="0" data-from="99">0</span></b><span>to use, forever</span></div>
         </div>
-        <div class="grid-3">
-          <div class="card"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M4 19V9m6 10V5m6 14v-7m4 7H3"/></svg></span><h3>Official numbers</h3><p>Total views, subscribers and videos straight from YouTube’s API, plus Bluesky followers and posts. Nothing guessed or made up.</p></div>
-          <div class="card"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 9h4m10 0h4M3 15h4m10 0h4"/></svg></span><h3>Rolling digits</h3><p>Digits that slide or roll in 3D, a tick sound as numbers change, and sparks or confetti when you hit a milestone.</p></div>
-          <div class="card"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg></span><h3>Several counters</h3><p>Show one big number, a grid of them, or let your counters take turns. Add labels and goals to each one.</p></div>
-          <div class="card"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.9 1.2-1.8-.5-1.1.3-2.2 1.5-2.2H17a4 4 0 0 0 4-4c0-5.5-4-10-9-10ZM7.5 11.5h.01M10.5 7.5h.01M15.5 8.5h.01"/></svg></span><h3>Make it yours</h3><p>Choose fonts, colours, gradients and backgrounds, and how big the name, picture and labels are.</p></div>
-          <div class="card"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M3 6h18v12H3zM8 21h8M12 18v3M10 10l4 2-4 2z"/></svg></span><h3>Ready for OBS</h3><p>A see-through version of your page, with no buttons or links, to drop into OBS or any streaming app.</p></div>
-          <div class="card"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6l-7-3Zm-3 9 2 2 4-4"/></svg></span><h3>Private by default</h3><p>Pages start private. No email, no real name, no adverts and no tracking cookies. Delete everything any time.</p></div>
+      </section>
+
+      <section id="features" class="section reveal" aria-labelledby="features-title">
+        <div class="section-head center">
+          <p class="kicker">Features</p>
+          <h2 id="features-title">Made to make your numbers <span class="grad-text">look huge</span></h2>
+          <p>Everything you need for a counter people can’t stop watching, on a second screen or on stream.</p>
+        </div>
+        <div class="bento" data-stagger>
+          <article class="bento-card wide">
+            <div class="viz" aria-hidden="true"><div id="bento-odo" class="viz-odo">8,402,117</div><span class="viz-plus">+27</span></div>
+            <div class="txt"><h3>Rolling digits</h3><p>Digits that slide or roll in 3D, with a tick sound as your numbers change. It feels alive, because it is.</p></div>
+          </article>
+          <article class="bento-card">
+            <div class="viz" aria-hidden="true"><div class="viz-bars"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+            <div class="txt"><h3>Official numbers</h3><p>Views, subscribers and videos straight from YouTube’s API, plus Bluesky followers and posts. Nothing guessed.</p></div>
+          </article>
+          <article class="bento-card">
+            <div class="viz" aria-hidden="true"><div class="viz-obs"><span class="rec"><span class="live-dot"></span>LIVE</span><span class="ov" data-tick="3">48,213</span></div></div>
+            <div class="txt"><h3>Ready for OBS</h3><p>A see-through overlay with no buttons or links. Add it to OBS once and it keeps itself up to date.</p></div>
+          </article>
+          <article class="bento-card">
+            <div class="viz" aria-hidden="true"><div class="viz-party"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><span class="badge">100K!</span></div></div>
+            <div class="txt"><h3>Milestone moments</h3><p>Sparks or confetti when you hit a goal, so the big moments land on stream.</p></div>
+          </article>
+          <article class="bento-card">
+            <div class="viz" aria-hidden="true"><div class="viz-style">1,284,519</div><div class="viz-dots"><i></i><i></i><i></i><i></i><i></i></div></div>
+            <div class="txt"><h3>Make it yours</h3><p>Fonts, colours, gradients and backgrounds, and how big the name, picture and labels are.</p></div>
+          </article>
+          <article class="bento-card">
+            <div class="viz" aria-hidden="true"><div class="viz-grid"><span>1.28M<small>Views</small></span><span>48.2K<small>Subscribers</small></span><span>312<small>Videos</small></span><span>3,417<small>Bluesky</small></span></div></div>
+            <div class="txt"><h3>Several counters</h3><p>One big number, a grid, or counters that take turns. Add labels and goals to each one.</p></div>
+          </article>
+          <article class="bento-card wide">
+            <div class="viz" aria-hidden="true"><div class="viz-lock"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 10h12v10H6zM8.5 10V7.5a3.5 3.5 0 0 1 7 0V10M12 14v2.5"/></svg></div></div>
+            <div class="txt"><h3>Private by default</h3><p>Pages start private. No email, no real name, no adverts and no tracking cookies. Download or delete everything, any time.</p></div>
+          </article>
         </div>
       </section>
 
       <section id="streams" class="section reveal" aria-labelledby="streams-title">
         <div class="split">
           <div>
-            <p class="kicker">For streams</p>
-            <h2 id="streams-title" class="mt-0">Put your numbers on stream</h2>
-            <p class="muted">Your page has an overlay version with a see-through background. Add it to OBS once and it keeps itself up to date.</p>
+            <p class="kicker">For streamers</p>
+            <h2 id="streams-title" class="mt-0">Your numbers, <span class="grad-text">live on stream</span></h2>
+            <p class="lede muted">Your page has an overlay version with a see-through background. Add it to OBS once and it counts along with your stream.</p>
             <ol class="steps">
               <li><b>Make your page public</b>On your account page. OBS isn’t signed in, so it needs a public page.</li>
-              <li><b>Copy the overlay address</b>Open your page’s settings and go to Stream.</li>
-              <li><b>Add a Browser source in OBS</b>Paste the address, set the size, and you’re done.</li>
+              <li><b>Copy the overlay address</b>It’s on your account page, and under Stream in your page’s settings.</li>
+              <li><b>Add a Browser source in OBS</b>Paste the address, set the size, and you’re live.</li>
             </ol>
+            <div class="btn-row">
+              <a class="btn" href="/signup" data-when-guest>Set up my overlay <span class="arrow" aria-hidden="true">→</span></a>
+              <a class="btn" href="/account" data-when-user hidden>Get my overlay address <span class="arrow" aria-hidden="true">→</span></a>
+            </div>
           </div>
           <div class="stream-mock" role="img" aria-label="An example stream with the counter in the corner">
             <div class="scene"></div>
+            <div class="scanlines"></div>
             <span class="live-tag"><span class="live-dot"></span>LIVE</span>
-            <span class="overlay-tag" aria-hidden="true">Overlay</span>
+            <span class="watching" aria-hidden="true">1.2K watching</span>
+            <div class="chat" aria-hidden="true">
+              <span><b>mia</b> lets goooo 50k!!</span>
+              <span><b>dev_sam</b> that counter is so clean</span>
+              <span><b>kofi</b> +1 sub from me</span>
+              <span><b>ana</b> watching it roll lol</span>
+            </div>
+            <span class="overlay-tag" aria-hidden="true">Your overlay</span>
             <div class="overlay-box" aria-hidden="true">
               <span class="ov-avatar"></span>
               <span><span id="demo-overlay" class="ov-num">48,200</span><br><span class="ov-label">Subscribers</span></span>
@@ -122,40 +197,69 @@
       </section>
 
       <section id="looks" class="section reveal" aria-labelledby="looks-title">
-        <div class="section-head">
+        <div class="section-head center">
           <p class="kicker">Looks</p>
-          <h2 id="looks-title">Make it look like yours</h2>
-          <p>Pick a style, then change anything you like in your page’s settings.</p>
+          <h2 id="looks-title">Make it look like <span class="grad-text">yours</span></h2>
+          <p>Start from a style, then change anything you like in your page’s settings.</p>
         </div>
-        <div class="swatches" aria-hidden="true">
-          <div class="swatch s1"><span>1,284,519</span></div>
-          <div class="swatch s2"><span>48,200</span></div>
-          <div class="swatch s3"><span>312</span></div>
-          <div class="swatch s4"><span>3,417</span></div>
+        <div class="swatches" aria-hidden="true" data-stagger>
+          <div class="swatch s1"><span>1,284,519</span><em>Neon</em></div>
+          <div class="swatch s2"><span>48,200</span><em>Candy</em></div>
+          <div class="swatch s3"><span>312</span><em>Paper</em></div>
+          <div class="swatch s4"><span>3,417</span><em>Terminal</em></div>
         </div>
       </section>
 
       <section id="how" class="section reveal" aria-labelledby="how-title">
-        <div class="section-head">
+        <div class="section-head center">
           <p class="kicker">How it works</p>
-          <h2 id="how-title">Ready in about five minutes</h2>
+          <h2 id="how-title">Live in <span class="grad-text">three steps</span></h2>
+          <p>About five minutes from now, your numbers could be rolling.</p>
         </div>
-        <div class="grid-3">
-          <div class="card">
-            <span class="step-num">1</span>
-            <h3>Pick a username</h3>
-            <p>Choose a username and a password. There’s no email address or phone number to give.</p>
+        <div class="how">
+          <span class="how-line" aria-hidden="true"></span>
+          <div class="grid-3" data-stagger>
+            <div class="card">
+              <span class="step-num">1</span>
+              <h3>Pick a username</h3>
+              <p>Choose a username and a password. There’s no email address or phone number to give.</p>
+            </div>
+            <div class="card">
+              <span class="step-num">2</span>
+              <h3>Connect your channel</h3>
+              <p>Type your @handle and paste a free YouTube API key from Google. We show you how, step by step. You never sign in to Google here.</p>
+            </div>
+            <div class="card">
+              <span class="step-num">3</span>
+              <h3>Watch it count</h3>
+              <p>Your page lives at <code>/u/yourname</code>. Style it, add Bluesky, and share it or put it on stream when you’re ready.</p>
+            </div>
           </div>
-          <div class="card">
-            <span class="step-num">2</span>
-            <h3>Connect your channel</h3>
-            <p>Type your channel’s @handle and paste a free YouTube API key from Google. Your page shows you how, step by step. You never sign in to Google here.</p>
+        </div>
+      </section>
+
+      <section id="free" class="section reveal" aria-labelledby="free-title">
+        <div class="offer">
+          <div>
+            <p class="kicker">Price</p>
+            <h2 id="free-title">Everything included. <span class="grad-text">Free.</span></h2>
+            <div class="price"><b>£0</b><span>/ forever</span></div>
+            <p class="muted">No card, no trial, no adverts and no paid extras. Just your numbers, counting.</p>
+            <div class="btn-row">
+              <a class="btn large" href="/signup" data-when-guest>Make my page free <span class="arrow" aria-hidden="true">→</span></a>
+              <a class="btn large" href="/account" data-user-page data-when-user hidden>Open my page <span class="arrow" aria-hidden="true">→</span></a>
+            </div>
           </div>
-          <div class="card">
-            <span class="step-num">3</span>
-            <h3>Watch it count</h3>
-            <p>Your page lives at <code>/u/yourname</code>. Make it look how you like, add Bluesky followers, and share it when you’re ready.</p>
-          </div>
+          <ul class="ticks">
+            <li>YouTube views, subscribers and videos</li>
+            <li>Bluesky followers and posts</li>
+            <li>Rolling digits, tick sounds and confetti</li>
+            <li>Goals and milestones</li>
+            <li>A see-through overlay for OBS</li>
+            <li>Fonts, colours and backgrounds</li>
+            <li>Private by default</li>
+            <li>Download or delete your data any time</li>
+          </ul>
         </div>
       </section>
 
@@ -163,22 +267,24 @@
         <div class="split">
           <div>
             <p class="kicker">Privacy</p>
-            <h2 id="privacy-title" class="mt-0">Your page, your choice</h2>
-            <p class="muted">We keep as little as we can, and you stay in control of it.</p>
+            <h2 id="privacy-title" class="mt-0">Your page, <span class="grad-text">your choice</span></h2>
+            <p class="lede muted">We keep as little as we can, and you stay in control of it.</p>
             <p class="fine">Read the <a href="/privacy">Privacy policy</a> for the details.</p>
           </div>
-          <ul class="ticks">
-            <li>New pages are private. Only you see yours until you choose to make it public.</li>
-            <li>No email, no real name, no advertising and no tracking cookies.</li>
-            <li>Your YouTube API key is never shown on any page.</li>
-            <li>Download everything we keep about you, or delete your account, any time.</li>
-            <li>Accounts not used for 12 months are deleted automatically.</li>
-          </ul>
+          <div class="card">
+            <ul class="ticks mt-0">
+              <li>New pages are private. Only you see yours until you choose to make it public.</li>
+              <li>No email, no real name, no advertising and no tracking cookies.</li>
+              <li>Your YouTube API key is never shown on any page.</li>
+              <li>Download everything we keep about you, or delete your account, any time.</li>
+              <li>Accounts not used for 12 months are deleted automatically.</li>
+            </ul>
+          </div>
         </div>
       </section>
 
       <section id="faq" class="section reveal" aria-labelledby="faq-title">
-        <div class="section-head">
+        <div class="section-head center">
           <p class="kicker">Questions</p>
           <h2 id="faq-title">Good to know</h2>
         </div>
@@ -189,7 +295,7 @@
           </details>
           <details class="faq">
             <summary>Why do I need a YouTube API key?</summary>
-            <p>YouTube’s official numbers come from its API, and each key gets a free daily allowance from Google. With your own key, your page has an allowance of its own. Getting one takes about 3 minutes, needs no card, and the steps are on your page. Your key is kept private and only used to read your channel’s public numbers. If the site has a shared key, you can skip this.</p>
+            <p>YouTube’s official numbers come from its API, and each key gets a free daily allowance from Google. With your own key, your page has an allowance of its own. Getting one takes about 3 minutes, needs no card, and the steps are on your page and your account page. Your key is kept private and only used to read your channel’s public numbers. If the site has a shared key, you can skip this.</p>
           </details>
           <details class="faq">
             <summary>How often do the numbers change?</summary>
@@ -205,7 +311,7 @@
           </details>
           <details class="faq">
             <summary>How do I use it in OBS?</summary>
-            <p>Make your page public, then open your page’s settings and go to Stream. Copy the address shown there into a Browser source in OBS.</p>
+            <p>Make your page public, then copy your overlay address from your account page (or under Stream in your page’s settings). Paste it into a Browser source in OBS.</p>
           </details>
           <details class="faq">
             <summary>What if I forget my password?</summary>
@@ -219,10 +325,11 @@
       </section>
 
       <section class="cta reveal" aria-labelledby="cta-title">
-        <h2 id="cta-title">Your page is a few minutes away</h2>
-        <p>Pick a username, connect your channel, and watch your numbers count.</p>
+        <p class="kicker">Ready?</p>
+        <h2 id="cta-title">Watch your numbers <span class="grad-text">move.</span></h2>
+        <p>Make your page in about five minutes. No email, no card, no catch.</p>
         <div class="btn-row">
-          <a class="btn large" href="/signup" data-when-guest>Make your page free <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn large" href="/signup" data-when-guest>Start counting free <span class="arrow" aria-hidden="true">→</span></a>
           <a class="btn large ghost" href="/signin" data-when-guest>Sign in</a>
           <a class="btn large" href="/account" data-user-page data-when-user hidden>Open my page <span class="arrow" aria-hidden="true">→</span></a>
         </div>
@@ -230,6 +337,7 @@
       </section>
     </div>
   </main>
+
 
   <footer class="site-foot">
     <div class="wrap foot-grid">

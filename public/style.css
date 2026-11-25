@@ -635,3 +635,12 @@ dialog.modal a { color: #fff; text-underline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) {
   .status-dot { animation: none; }
 }
+
+/* Website: "your key is saved" line under the API key fields */
+.key-status {
+  display: flex; align-items: center; gap: 8px; margin: 8px 0 0; padding: 9px 12px; border-radius: 10px;
+  border: 1px solid rgba(46, 204, 113, 0.35); background: rgba(46, 204, 113, 0.08); color: #b8f5cf; font-size: 13.5px;
+}
+.key-status::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: #2ecc71; box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.18); }
+.key-status.flash { animation: key-flash 1.2s ease; }
+@keyframes key-flash { 0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.55); } 100% { box-shadow: 0 0 0 14px rgba(46, 204, 113, 0); } }

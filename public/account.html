@@ -47,6 +47,7 @@
         <nav class="dash-nav" aria-label="Account sections">
           <a href="#sec-page" class="on">Your page</a>
           <a href="#sec-visibility">Who can see it</a>
+          <a href="#sec-key">API key</a>
           <a href="#sec-details">Details</a>
           <a href="#sec-password">Password</a>
           <a href="#sec-recovery">Recovery code</a>
@@ -105,6 +106,37 @@
             </div>
             <p id="vis-error" class="form-error mt-s" role="alert" hidden></p>
             <p class="fine mt-s">A public page shows your counters, your channel’s name and picture, and your username (it’s in the address). Anyone who has the address can see it, so think about who you share it with. You need a public page to use it in OBS. After you make it private, copies kept by our hosting provider can take up to 2 minutes to disappear.</p>
+          </section>
+
+          <!-- YouTube API key -->
+          <section id="sec-key" class="acct-section" aria-labelledby="key-title">
+            <h2 id="key-title">Your YouTube API key</h2>
+            <p id="key-text" class="mt-0"></p>
+            <p id="key-status" class="key-status" role="status" hidden></p>
+            <form id="key-form" class="form mt-s" novalidate>
+              <div class="field">
+                <label class="field-label" for="key-input" id="key-label">Paste your API key</label>
+                <div class="pw-row">
+                  <input id="key-input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="120" placeholder="AIza…">
+                  <button class="btn ghost small" type="button" data-toggle-pw="key-input" aria-controls="key-input">Show</button>
+                </div>
+                <span class="field-hint">Free from Google. It’s checked with YouTube before it’s saved, kept with your account in this site’s private database, never shown on any page, and only used to read your channel’s public numbers.</span>
+              </div>
+              <p id="key-error" class="form-error" role="alert" hidden></p>
+              <p id="key-note" class="notice warn" hidden></p>
+              <div class="btn-row mt-0">
+                <button id="btn-key-save" class="btn" type="submit">Save key</button>
+                <button id="btn-key-remove" class="btn ghost danger small" type="button" hidden>Remove key</button>
+              </div>
+            </form>
+            <details class="guide mt-s">
+              <summary>How to get a free API key (about 3 minutes)</summary>
+              <ol>
+                <li>Open <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener noreferrer">Google Cloud: new project</a>, sign in with your Google account and create a project.</li>
+                <li>Open <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener noreferrer">YouTube Data API v3</a> with that project selected and click <b>Enable</b>.</li>
+                <li>Open <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">Credentials</a>, click <b>+ Create credentials</b>, choose <b>API key</b>, then copy it and paste it above.</li>
+              </ol>
+            </details>
           </section>
 
           <!-- About the account -->

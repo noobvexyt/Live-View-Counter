@@ -1044,6 +1044,11 @@ async function handleConnect(request) {
     info = ytInfo(channelInfo(await findChannel(createYouTube({ apiKey, base: YT_BASE, timeoutMs: 12_000 }), input)));
   } catch (e) {
     if (!(e instanceof YouTubeError)) throw e;
+    if (e.kind === 'notFound' && pasted) {
+      // Google answered with this key, so it works: keep it, so only the channel needs fixing.
+      const { rec: kept } = await withUser(rec.name, (r) => { r.ytKey = { key: pasted, addedAt: Date.now() }; });
+      return fail(400, e.message, { field: 'channel', kind: e.kind, keySaved: true, keyHint: ownKeyHint(kept) });
+    }
     if (e.kind === 'notFound' || e.kind === 'bad') return fail(400, e.message, { field: 'channel', kind: e.kind });
     if (e.kind === 'quota') {
       return ownKey
@@ -1075,6 +1080,47 @@ async function handleConnect(request) {
     keyHint: ownKeyHint(next),
     state: snapshotOf(next, cache, Date.now(), true),
   });
+}
+
+// Saves (or removes) the page owner's own YouTube API key by itself, without connecting a channel at
+// the same time. The key is checked with Google first (1 unit of the key's own allowance). If a channel
+// is connected, it's read again straight away with the new key.
+async function handleMyKey(request) {
+  guard(request);
+  const { rec } = await requireUser(request);
+  notSuspended(rec);
+  const body = await readBody(request, 2_048);
+  const action = String(body.action || 'save');
+  if (action === 'remove') {
+    const { rec: next } = await withUser(rec.name, (r) => { delete r.ytKey; });
+    return json(200, { ok: true, keyHint: '', state: snapshotOf(next, cacheOf(await cmd('GET', K.cache)), Date.now(), true) });
+  }
+  if (action !== 'save') throw new UserError('Bad request.');
+  const key = String(body.apiKey || '').replace(/\s+/g, '');
+  if (!key) throw new UserError('Paste your API key first.', 'apiKey');
+  if (!KEY_RE.test(key)) {
+    throw new UserError('That doesn’t look like an API key. It’s one long piece of text with no spaces, about 39 characters, and usually starts with “AIza”.', 'apiKey');
+  }
+  await spendLookup(rec.name);
+  const channelId = rec.yt && rec.yt.channelId;
+  let note = '';
+  try {
+    await createYouTube({ apiKey: key, base: YT_BASE, timeoutMs: 12_000 }).channels({ part: 'id', id: channelId || KEY_TEST_CHANNEL, maxResults: 1 });
+  } catch (e) {
+    if (!(e instanceof YouTubeError)) throw e;
+    if (e.kind === 'quota') note = 'Saved. Google says this key’s free allowance for today is used up, so it starts working after midnight Pacific time.';
+    else if (e.kind === 'network' || e.kind === 'server' || e.kind === 'rate') {
+      return fail(503, 'Couldn’t reach YouTube to check the key. Try again in a minute.', { kind: e.kind });
+    } else return fail(400, e.message, { field: 'apiKey', kind: e.kind, ...(e.link ? { link: e.link } : {}) });
+  }
+  const { rec: next } = await withUser(rec.name, (r) => { r.ytKey = { key, addedAt: Date.now() }; });
+  let cache = null;
+  if (channelId && !note) {
+    const due = (c) => { if (isObj(c.yt[channelId])) c.yt[channelId].nextAt = 0; };
+    cache = await readNow(wantsOf(next), Date.now(), due, key).catch(() => null);
+  }
+  if (!cache) cache = cacheOf(await cmd('GET', K.cache));
+  return json(200, { ok: true, note, keyHint: ownKeyHint(next), state: snapshotOf(next, cache, Date.now(), true) });
 }
 
 // Removes the channel and the page owner's own API key (if they saved one).
@@ -1371,6 +1417,7 @@ async function route(request) {
   if (post && path === 'me/settings') return handleSettingsSave(request);
   if (post && path === 'me/connect') return handleConnect(request);
   if (post && path === 'me/disconnect') return handleDisconnect(request);
+  if (post && path === 'me/key') return handleMyKey(request);
   if (post && path === 'me/accounts/check') return handleCheckAccount(request);
   if (post && path === 'me/visibility') return handleVisibility(request);
   if (post && path === 'me/password') return handlePassword(request);

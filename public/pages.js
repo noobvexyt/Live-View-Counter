@@ -184,23 +184,37 @@
     let views = 1284519;
     let subs = 48200;
     let sky = 3417;
+    let today = 1204;
+    let big = 8402117;
     let odo = null;
+    let bigOdo = null;
     if (window.Odometer && !still) {
       el.textContent = '';
       odo = new window.Odometer(el);
       odo.set(views, { instant: true });
+      const b = $('bento-odo');
+      if (b) {
+        b.textContent = '';
+        bigOdo = new window.Odometer(b);
+        bigOdo.set(big, { instant: true });
+      }
     }
     const show = () => {
       if (odo) odo.set(views, { duration: 650 });
       else el.textContent = fmt(views);
+      if (bigOdo) bigOdo.set(big, { duration: 700 });
       $('demo-subs').textContent = fmt(subs);
       $('demo-sky').textContent = fmt(sky);
+      if ($('chip-today')) $('chip-today').textContent = fmt(today);
       if ($('demo-overlay')) $('demo-overlay').textContent = fmt(subs);
     };
     let n = 0;
     const tick = () => {
       if (!document.hidden) {
-        views += 3 + Math.floor(Math.random() * 18);
+        const more = 3 + Math.floor(Math.random() * 18);
+        views += more;
+        today += more;
+        big += 11 + Math.floor(Math.random() * 40);
         if (++n % 4 === 0) subs += 100; // YouTube rounds subscriber counts
         if (Math.random() < 0.35) sky += 1;
         show();
@@ -358,7 +372,61 @@
     $('f-signin').textContent = when(me.signInAt);
     $('f-pw').textContent = when(me.pwAt);
     $('f-youtube').textContent = me.youtube ? me.youtube.input : 'Not connected';
-    $('f-key').textContent = me.keyHint ? `Saved, ending ${me.keyHint.replace(/^…/, '')}` : me.youtube ? 'None (the site’s shared key is used)' : 'None';
+    const renderKey = () => {
+      const has = Boolean(me.keyHint);
+      const end = has ? me.keyHint.replace(/^…/, '') : '';
+      $('f-key').textContent = has ? `Saved, ending ${end}` : me.youtube ? 'None (the site’s shared key is used)' : 'None';
+      $('key-status').hidden = !has;
+      if (has) $('key-status').textContent = `Saved: your key ending ${end}. Your channel is read with it.`;
+      $('key-text').textContent = has
+        ? 'Your channel is read with your own key, so your page never waits on anyone else’s allowance. Paste a new key below to replace it.'
+        : cfg.ytAvailable
+          ? 'Right now your page uses this site’s shared key. Add your own free key so your page keeps counting even if the shared allowance runs out.'
+          : 'Add your own free key to show your YouTube numbers. It takes about 3 minutes (steps below).';
+      $('key-label').textContent = has ? 'Replace your key' : 'Paste your API key';
+      $('btn-key-remove').hidden = !has;
+    };
+    renderKey();
+    const flash = (el) => { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); };
+    $('key-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = $('key-input');
+      const err = $('key-error');
+      clearError(err, { apiKey: input });
+      $('key-note').hidden = true;
+      const key = input.value.replace(/\s+/g, '');
+      if (!key) return showError(err, { field: 'apiKey', message: 'Paste your API key first.' }, { apiKey: input });
+      const btn = $('btn-key-save');
+      busy(btn, true, 'Checking with YouTube…');
+      const res = await post('/api/me/key', { action: 'save', apiKey: key });
+      busy(btn, false);
+      if (!res.data.ok) {
+        if (res.status === 401) return toSignIn();
+        return showError(err, res.data.error, { apiKey: input });
+      }
+      input.value = '';
+      input.type = 'password';
+      me = { ...me, keyHint: res.data.keyHint };
+      renderKey();
+      flash($('key-status'));
+      if (res.data.note) { $('key-note').textContent = res.data.note; $('key-note').hidden = false; }
+      if (res.data.state && res.data.state.page) renderChannel(res.data.state);
+      else renderChannel(null);
+    });
+    $('btn-key-remove').addEventListener('click', async () => {
+      if (!window.confirm('Remove your saved API key?\n\nYour channel stays connected. Without your key, it’s read with this site’s shared key if there is one.')) return;
+      const btn = $('btn-key-remove');
+      busy(btn, true, 'Removing…');
+      const res = await post('/api/me/key', { action: 'remove' });
+      busy(btn, false);
+      if (!res.data.ok) {
+        if (res.status === 401) return toSignIn();
+        return showError($('key-error'), res.data.error);
+      }
+      me = { ...me, keyHint: '' };
+      renderKey();
+      if (res.data.state && res.data.state.page) renderChannel(res.data.state);
+    });
     $('f-counters').textContent = String(me.counters || 0);
     $('f-session').textContent = me.remembered ? when(me.sessionEnds) : 'You close your browser (or 12 hours at most)';
 
