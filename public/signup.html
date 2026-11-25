@@ -14,87 +14,137 @@
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-head">
     <div class="wrap head-row">
-      <a class="brand" href="/"><img src="/favicon.svg" alt="" width="28" height="28">Live View Counter</a>
-      <nav class="head-nav" aria-label="Main">
-        <a href="/signin" data-when-guest>Sign in</a>
-        <a href="/account" data-user-page data-when-user hidden>My page</a>
-        <a href="/account" data-when-user hidden>Account</a>
-      </nav>
+      <a class="brand" href="/"><img src="/favicon.svg" alt="" width="30" height="30"><span>Live View Counter</span></a>
+      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-menu" data-menu-toggle><span class="sr-only">Menu</span><svg class="i-open" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg><svg class="i-close" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="m6 6 12 12M18 6 6 18"/></svg></button>
+      <div id="site-menu" class="head-menu">
+        <nav class="head-nav" aria-label="Main">
+          <a href="/#features">Features</a>
+          <a href="/#streams">For streams</a>
+          <a href="/#faq">Questions</a>
+          <a href="/contact">Contact</a>
+        </nav>
+        <div class="head-actions">
+          <a class="head-link" href="/signin" data-when-guest>Sign in</a>
+          <a class="btn small" href="/signup" data-when-guest>Get started</a>
+          <a class="head-link" href="/account" data-when-user hidden>Account</a>
+          <button class="head-link" type="button" data-signout data-when-user hidden>Sign out</button>
+          <a class="btn small" href="/account" data-user-page data-when-user hidden>My page</a>
+        </div>
+      </div>
     </div>
   </header>
 
   <main id="main">
-    <div class="wrap thin">
-      <!-- Step 1: the form -->
-      <section id="signup-panel" class="panel" aria-labelledby="signup-title">
-        <h1 id="signup-title">Make your page</h1>
-        <p class="muted">Free, and no email needed. Your page stays private until you choose to share it.</p>
-
-        <p id="signed-in-note" class="notice" hidden>You’re already signed in as <b data-user-name></b>. <a href="/account" data-user-page>Open your page</a> or <a href="/account">go to your account</a>.</p>
-        <p id="closed-note" class="notice warn" hidden></p>
-
-        <form id="signup-form" class="form" novalidate>
-          <div class="field">
-            <label class="field-label" for="su-username">Username</label>
-            <input id="su-username" name="username" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="24" aria-describedby="su-username-hint" required>
-            <span id="su-username-hint" class="field-hint">3 to 24 lowercase letters, numbers, dashes or underscores. It’s part of your page’s address, <code>/u/<span id="su-preview">yourname</span></code>, so don’t use your real name.</span>
-          </div>
-          <div class="field">
-            <label class="field-label" for="su-password">Password</label>
-            <div class="pw-row">
-              <input id="su-password" name="password" type="password" autocomplete="new-password" maxlength="200" aria-describedby="su-password-hint" required>
-              <button class="btn ghost small" type="button" data-toggle-pw="su-password" aria-controls="su-password">Show</button>
+    <div class="wrap auth">
+      <div class="auth-main">
+        <!-- Step 1: the form -->
+        <section id="signup-panel" class="panel" aria-labelledby="signup-title">
+          <h1 id="signup-title">Make your page</h1>
+          <p class="muted">Free, and no email needed. Your page stays private until you choose to share it.</p>
+  
+          <p id="signed-in-note" class="notice" hidden>You’re already signed in as <b data-user-name></b>. <a href="/account" data-user-page>Open your page</a> or <a href="/account">go to your account</a>.</p>
+          <p id="closed-note" class="notice warn" hidden></p>
+  
+          <form id="signup-form" class="form" novalidate>
+            <div class="field">
+              <label class="field-label" for="su-username">Username</label>
+              <input id="su-username" name="username" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="24" aria-describedby="su-username-hint" required>
+              <span id="su-username-hint" class="field-hint">3 to 24 lowercase letters, numbers, dashes or underscores. It’s part of your page’s address, <code>/u/<span id="su-preview">yourname</span></code>, so don’t use your real name.</span>
             </div>
-            <span id="su-password-hint" class="field-hint">At least 10 characters. Three random words together works well.</span>
-            <span class="caps" data-caps-for="su-password" hidden>Caps Lock is on.</span>
+            <div class="field">
+              <label class="field-label" for="su-password">Password</label>
+              <div class="pw-row">
+                <input id="su-password" name="password" type="password" autocomplete="new-password" maxlength="200" aria-describedby="su-password-hint" required>
+                <button class="btn ghost small" type="button" data-toggle-pw="su-password" aria-controls="su-password">Show</button>
+              </div>
+              <span id="su-password-hint" class="field-hint">At least 10 characters. Three random words together works well.</span>
+            <div class="strength" data-strength-for="su-password" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+              <span class="caps" data-caps-for="su-password" hidden>Caps Lock is on.</span>
+            </div>
+  
+            <!-- Left empty by people; only bots fill it in. -->
+            <div class="hp" aria-hidden="true">
+              <label for="su-website">Website</label>
+              <input id="su-website" name="website" type="text" tabindex="-1" autocomplete="off">
+            </div>
+  
+            <label class="check"><input id="su-remember" type="checkbox"><span>Keep me signed in on this device for 30 days</span></label>
+            <label class="check" id="su-age-row"><input id="su-age" type="checkbox" required><span>I’m 13 or older.</span></label>
+            <label class="check" id="su-agree-row"><input id="su-agree" type="checkbox" required><span>I agree to the <a href="/terms" target="_blank">Terms</a> and I’ve read the <a href="/privacy" target="_blank">Privacy policy</a>.</span></label>
+  
+            <p id="signup-error" class="form-error" role="alert" hidden></p>
+            <button id="btn-signup" class="btn" type="submit">Make my account</button>
+          </form>
+          <p class="fine mt-m">Already have an account? <a href="/signin">Sign in</a>.</p>
+        </section>
+  
+        <!-- Step 2: the recovery code -->
+        <section id="code-panel" class="panel" aria-labelledby="code-title" hidden>
+          <h1 id="code-title" tabindex="-1">Save your recovery code</h1>
+          <p>If you ever forget your password, this code is the only way back into your account. We don’t have your email, so we can’t reset it for you.</p>
+          <div id="code-value" class="code-box"></div>
+          <div class="btn-row mt-0">
+            <button id="btn-copy-code" class="btn ghost small" type="button">Copy</button>
+            <button id="btn-download-code" class="btn ghost small" type="button">Download as a file</button>
           </div>
-
-          <!-- Left empty by people; only bots fill it in. -->
-          <div class="hp" aria-hidden="true">
-            <label for="su-website">Website</label>
-            <input id="su-website" name="website" type="text" tabindex="-1" autocomplete="off">
+          <p class="fine mt-s">Keep it somewhere safe, like a password manager or a note on paper. It works once: after you use it, you get a new one. You can also make a new one on your account page.</p>
+          <label class="check"><input id="code-saved" type="checkbox"><span>I’ve saved my recovery code</span></label>
+          <div class="btn-row">
+            <a id="btn-continue" class="btn" href="/account" aria-disabled="true">Set up my page</a>
           </div>
-
-          <label class="check"><input id="su-remember" type="checkbox"><span>Keep me signed in on this device for 30 days</span></label>
-          <label class="check" id="su-age-row"><input id="su-age" type="checkbox" required><span>I’m 13 or older.</span></label>
-          <label class="check" id="su-agree-row"><input id="su-agree" type="checkbox" required><span>I agree to the <a href="/terms" target="_blank">Terms</a> and I’ve read the <a href="/privacy" target="_blank">Privacy policy</a>.</span></label>
-
-          <p id="signup-error" class="form-error" role="alert" hidden></p>
-          <button id="btn-signup" class="btn" type="submit">Make my account</button>
-        </form>
-        <p class="fine mt-m">Already have an account? <a href="/signin">Sign in</a>.</p>
-      </section>
-
-      <!-- Step 2: the recovery code -->
-      <section id="code-panel" class="panel" aria-labelledby="code-title" hidden>
-        <h1 id="code-title" tabindex="-1">Save your recovery code</h1>
-        <p>If you ever forget your password, this code is the only way back into your account. We don’t have your email, so we can’t reset it for you.</p>
-        <div id="code-value" class="code-box"></div>
-        <div class="btn-row mt-0">
-          <button id="btn-copy-code" class="btn ghost small" type="button">Copy</button>
-          <button id="btn-download-code" class="btn ghost small" type="button">Download as a file</button>
-        </div>
-        <p class="fine mt-s">Keep it somewhere safe, like a password manager or a note on paper. It works once: after you use it, you get a new one. You can also make a new one on your account page.</p>
-        <label class="check"><input id="code-saved" type="checkbox"><span>I’ve saved my recovery code</span></label>
-        <div class="btn-row">
-          <a id="btn-continue" class="btn" href="/account" aria-disabled="true">Set up my page</a>
-        </div>
-      </section>
+        </section>
+      </div>
+      <aside class="auth-side" aria-label="Why make a page">
+        <p class="kicker">Free, no email</p>
+        <h2>Your page in a few minutes</h2>
+        <p>Pick a username, connect your channel, and your numbers start counting.</p>
+        <ul class="ticks">
+          <li>Free, with no adverts or paid extras</li>
+          <li>No email address or phone number</li>
+          <li>Private until you choose to share it</li>
+          <li>Works full screen and in OBS</li>
+        </ul>
+        <div class="mini" aria-hidden="true"><div class="demo-avatar">Y</div><div><b>1,284,519</b><span>Total views · example</span></div></div>
+      </aside>
     </div>
   </main>
 
   <footer class="site-foot">
-    <div class="wrap">
-      <nav aria-label="Site">
-        <a href="/">Home</a>
-        <a href="/privacy">Privacy</a>
+    <div class="wrap foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="/"><img src="/favicon.svg" alt="" width="26" height="26"><span>Live View Counter</span></a>
+        <p>Big, live counters for your YouTube channel and Bluesky profile. Free, private by default, and ready for OBS.</p>
+      </div>
+      <nav class="foot-col" aria-labelledby="fh-product">
+        <h2 id="fh-product">Product</h2>
+        <a href="/#features">Features</a>
+        <a href="/#streams">For streams</a>
+        <a href="/#faq">Questions</a>
+        <a href="/signup">Make your page</a>
+      </nav>
+      <nav class="foot-col" aria-labelledby="fh-account">
+        <h2 id="fh-account">Account</h2>
+        <a href="/signin">Sign in</a>
+        <a href="/account">Your account</a>
+        <a href="/forgot">Forgotten password</a>
+      </nav>
+      <nav class="foot-col" aria-labelledby="fh-legal">
+        <h2 id="fh-legal">Legal</h2>
+        <a href="/privacy">Privacy policy</a>
         <a href="/terms">Terms</a>
         <a href="/cookies">Cookies</a>
         <button type="button" data-cookie-settings>Cookie settings</button>
-        <a href="/contact">Contact and reports</a>
+      </nav>
+      <nav class="foot-col" aria-labelledby="fh-help">
+        <h2 id="fh-help">Help</h2>
+        <a href="/contact">Contact</a>
+        <a href="/contact#report">Report a page</a>
         <a href="/admin">Site owner</a>
       </nav>
-      <p>Live View Counter is run by <span data-owner>NoobVex</span> in the United Kingdom. Not affiliated with or endorsed by YouTube, Google or Bluesky.</p>
+    </div>
+    <div class="wrap foot-bottom">
+      <p>Live View Counter is run by <span data-owner>NoobVex</span> in the United Kingdom.</p>
+      <p>Not affiliated with or endorsed by YouTube, Google or Bluesky.</p>
     </div>
   </footer>
 

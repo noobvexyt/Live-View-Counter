@@ -21,10 +21,19 @@
   <main id="counter-view" class="counter-view" hidden>
     <div id="cards" class="cards"></div>
     <div id="empty" class="empty" hidden>
+      <img id="empty-logo" class="empty-logo" src="/favicon.svg" alt="" width="56" height="56" hidden>
+      <h1 id="empty-title" class="empty-title" hidden>Nothing to see here</h1>
       <p id="empty-text">No counters to show yet.</p>
-      <button id="btn-empty-youtube" class="primary owner-only" type="button" hidden>Connect your YouTube channel</button>
-      <button id="btn-empty-add" class="primary owner-only" type="button">Add a counter</button>
-      <p id="empty-links" class="empty-links" hidden><a href="/">Go to the home page</a></p>
+      <div class="empty-actions">
+        <button id="btn-empty-youtube" class="primary owner-only" type="button" hidden>Connect your YouTube channel</button>
+        <button id="btn-empty-add" class="primary owner-only" type="button">Add a counter</button>
+      </div>
+      <div id="empty-links" class="empty-links" hidden>
+        <a class="primary-link" href="/">Go to the home page</a>
+        <a class="ghost-btn" href="/account" data-when-user hidden>My account</a>
+        <a class="ghost-btn" href="/signin" data-when-guest>Sign in</a>
+        <a class="ghost-btn" href="/signup" data-when-guest>Make your own page</a>
+      </div>
     </div>
   </main>
 
@@ -553,7 +562,7 @@
   <!-- Website version only: site links and privacy choices (see site.js, which also adds the banner) -->
   <footer id="site-footer" class="site-footer" hidden>
     <nav aria-label="Site">
-      <a href="/">Home</a>
+      <a class="foot-home" href="/"><img src="/favicon.svg" alt="" width="14" height="14">Live View Counter</a>
       <a href="/account" data-when-user hidden>My account</a>
       <a href="/signin" data-when-guest>Sign in</a>
       <a href="/signup" data-when-guest>Make your own</a>

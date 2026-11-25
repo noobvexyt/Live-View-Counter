@@ -258,13 +258,17 @@
   function renderEmpty() {
     const box = $('empty');
     const text = $('empty-text');
+    const branded = missing && !OVERLAY;
     if (missing) {
       text.textContent = OVERLAY
         ? 'Nothing to show. If this is your page, make it public on your account page to use it in OBS.'
-        : 'There’s nothing to see here. This page may be private, or the account may not exist.';
+        : 'This page is private, or there’s no account with this name. If it’s yours, sign in and make it public on your account page.';
     } else {
       text.textContent = 'No counters to show yet.';
     }
+    $('empty-logo').hidden = !branded;
+    $('empty-title').hidden = !branded;
+    box.classList.toggle('branded', branded);
     $('empty-links').hidden = !HOSTED || OVERLAY || canEdit();
     const ytBtn = $('btn-empty-youtube');
     ytBtn.hidden = missing || OVERLAY || !canEdit() || ytReady();

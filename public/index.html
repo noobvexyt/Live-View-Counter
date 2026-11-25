@@ -14,43 +14,132 @@
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-head">
     <div class="wrap head-row">
-      <a class="brand" href="/"><img src="/favicon.svg" alt="" width="28" height="28">Live View Counter</a>
-      <nav class="head-nav" aria-label="Main">
-        <a href="/signin" data-when-guest>Sign in</a>
-        <a class="btn small" href="/signup" data-when-guest>Sign up free</a>
-        <a href="/account" data-user-page data-when-user hidden>My page</a>
-        <a href="/account" data-when-user hidden>Account</a>
-        <button class="link-btn" type="button" data-signout data-when-user hidden>Sign out</button>
-      </nav>
+      <a class="brand" href="/"><img src="/favicon.svg" alt="" width="30" height="30"><span>Live View Counter</span></a>
+      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-menu" data-menu-toggle><span class="sr-only">Menu</span><svg class="i-open" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg><svg class="i-close" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="m6 6 12 12M18 6 6 18"/></svg></button>
+      <div id="site-menu" class="head-menu">
+        <nav class="head-nav" aria-label="Main">
+          <a href="/#features">Features</a>
+          <a href="/#streams">For streams</a>
+          <a href="/#faq">Questions</a>
+          <a href="/contact">Contact</a>
+        </nav>
+        <div class="head-actions">
+          <a class="head-link" href="/signin" data-when-guest>Sign in</a>
+          <a class="btn small" href="/signup" data-when-guest>Get started</a>
+          <a class="head-link" href="/account" data-when-user hidden>Account</a>
+          <button class="head-link" type="button" data-signout data-when-user hidden>Sign out</button>
+          <a class="btn small" href="/account" data-user-page data-when-user hidden>My page</a>
+        </div>
+      </div>
     </div>
   </header>
 
   <main id="main">
-    <div class="wrap">
-      <section class="hero">
-        <div>
-          <span class="eyebrow">Free · No email needed · Private until you share it</span>
-          <h1>Your channel’s numbers, counting live</h1>
-          <p class="lede">Make a page that shows your YouTube channel’s total views, subscribers and videos, and your Bluesky followers, as big rolling counters. Keep it open on a spare screen, or add it to your stream with OBS.</p>
-          <div class="btn-row">
-            <a class="btn" href="/signup" data-when-guest>Make your page</a>
-            <a class="btn ghost" href="/signin" data-when-guest>Sign in</a>
-            <a class="btn" href="/account" data-user-page data-when-user hidden>Open my page</a>
-            <a class="btn ghost" href="/account" data-when-user hidden>My account</a>
+    <div class="hero-wrap">
+      <div class="wrap">
+        <section class="hero">
+          <div>
+            <span class="eyebrow"><span class="live-dot" aria-hidden="true"></span>Free · No email needed · Ready for OBS</span>
+            <h1>Your channel’s numbers, <span class="grad-text">counting live.</span></h1>
+            <p class="lede">Make a page that shows your YouTube views, subscribers and videos, and your Bluesky followers, as big rolling counters. Keep it on a spare screen, or put it on your stream.</p>
+            <div class="btn-row">
+              <a class="btn large" href="/signup" data-when-guest>Make your page free <span class="arrow" aria-hidden="true">→</span></a>
+              <a class="btn large ghost" href="#how" data-when-guest>How it works</a>
+              <a class="btn large" href="/account" data-user-page data-when-user hidden>Open my page <span class="arrow" aria-hidden="true">→</span></a>
+              <a class="btn large ghost" href="/account" data-when-user hidden>My account</a>
+            </div>
+            <ul class="trust">
+              <li><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></svg>Official YouTube numbers</li>
+              <li><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></svg>Private until you share it</li>
+              <li><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></svg>No email, no card</li>
+            </ul>
           </div>
-          <p class="fine" data-when-guest>You need to be 13 or older to make an account.</p>
+          <div>
+            <div class="window" aria-label="An example counter page" role="img">
+              <div class="window-bar" aria-hidden="true">
+                <div class="window-dots"><span></span><span></span><span></span></div>
+                <div class="window-url"><span id="demo-host">your-site</span>/u/yourname</div>
+              </div>
+              <div class="window-body" aria-hidden="true">
+                <span class="demo-status"><span class="live-dot"></span>Checked just now</span>
+                <div>
+                  <div class="demo-avatar">Y</div>
+                  <div class="demo-name">Your channel</div>
+                  <div id="demo-number" class="demo-number">1,284,519</div>
+                  <div class="demo-label">Total views</div>
+                </div>
+                <div class="demo-tiles">
+                  <div class="demo-tile"><b id="demo-subs">48,200</b><span>Subscribers</span></div>
+                  <div class="demo-tile"><b id="demo-sky">3,417</b><span>Bluesky followers</span></div>
+                </div>
+              </div>
+            </div>
+            <p class="demo-note">An example page. Real pages show official numbers, checked about once a minute.</p>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <section id="features" class="section reveal" aria-labelledby="features-title">
+        <div class="section-head">
+          <p class="kicker">Features</p>
+          <h2 id="features-title">Everything your counter needs</h2>
+          <p>One page for your numbers, made to look good full screen and on stream.</p>
         </div>
-        <div class="demo" aria-label="Example of a counter page">
-          <div class="demo-avatar" aria-hidden="true"></div>
-          <div class="demo-name">Your channel</div>
-          <div id="demo-number" class="demo-number" aria-hidden="true">1,284,519</div>
-          <div class="demo-label">Total views</div>
-          <p class="demo-note">Example only. Real pages show YouTube’s official numbers, checked about once a minute.</p>
+        <div class="grid-3">
+          <div class="card"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M4 19V9m6 10V5m6 14v-7m4 7H3"/></svg></span><h3>Official numbers</h3><p>Total views, subscribers and videos straight from YouTube’s API, plus Bluesky followers and posts. Nothing guessed or made up.</p></div>
+          <div class="card"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M17 4v16M3 9h4m10 0h4M3 15h4m10 0h4"/></svg></span><h3>Rolling digits</h3><p>Digits that slide or roll in 3D, a tick sound as numbers change, and sparks or confetti when you hit a milestone.</p></div>
+          <div class="card"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg></span><h3>Several counters</h3><p>Show one big number, a grid of them, or let your counters take turns. Add labels and goals to each one.</p></div>
+          <div class="card"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.9 1.2-1.8-.5-1.1.3-2.2 1.5-2.2H17a4 4 0 0 0 4-4c0-5.5-4-10-9-10ZM7.5 11.5h.01M10.5 7.5h.01M15.5 8.5h.01"/></svg></span><h3>Make it yours</h3><p>Choose fonts, colours, gradients and backgrounds, and how big the name, picture and labels are.</p></div>
+          <div class="card"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M3 6h18v12H3zM8 21h8M12 18v3M10 10l4 2-4 2z"/></svg></span><h3>Ready for OBS</h3><p>A see-through version of your page, with no buttons or links, to drop into OBS or any streaming app.</p></div>
+          <div class="card"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6l-7-3Zm-3 9 2 2 4-4"/></svg></span><h3>Private by default</h3><p>Pages start private. No email, no real name, no adverts and no tracking cookies. Delete everything any time.</p></div>
         </div>
       </section>
 
-      <section class="section" aria-labelledby="how">
-        <h2 id="how">How it works</h2>
+      <section id="streams" class="section reveal" aria-labelledby="streams-title">
+        <div class="split">
+          <div>
+            <p class="kicker">For streams</p>
+            <h2 id="streams-title" class="mt-0">Put your numbers on stream</h2>
+            <p class="muted">Your page has an overlay version with a see-through background. Add it to OBS once and it keeps itself up to date.</p>
+            <ol class="steps">
+              <li><b>Make your page public</b>On your account page. OBS isn’t signed in, so it needs a public page.</li>
+              <li><b>Copy the overlay address</b>Open your page’s settings and go to Stream.</li>
+              <li><b>Add a Browser source in OBS</b>Paste the address, set the size, and you’re done.</li>
+            </ol>
+          </div>
+          <div class="stream-mock" role="img" aria-label="An example stream with the counter in the corner">
+            <div class="scene"></div>
+            <span class="live-tag"><span class="live-dot"></span>LIVE</span>
+            <span class="overlay-tag" aria-hidden="true">Overlay</span>
+            <div class="overlay-box" aria-hidden="true">
+              <span class="ov-avatar"></span>
+              <span><span id="demo-overlay" class="ov-num">48,200</span><br><span class="ov-label">Subscribers</span></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="looks" class="section reveal" aria-labelledby="looks-title">
+        <div class="section-head">
+          <p class="kicker">Looks</p>
+          <h2 id="looks-title">Make it look like yours</h2>
+          <p>Pick a style, then change anything you like in your page’s settings.</p>
+        </div>
+        <div class="swatches" aria-hidden="true">
+          <div class="swatch s1"><span>1,284,519</span></div>
+          <div class="swatch s2"><span>48,200</span></div>
+          <div class="swatch s3"><span>312</span></div>
+          <div class="swatch s4"><span>3,417</span></div>
+        </div>
+      </section>
+
+      <section id="how" class="section reveal" aria-labelledby="how-title">
+        <div class="section-head">
+          <p class="kicker">How it works</p>
+          <h2 id="how-title">Ready in about five minutes</h2>
+        </div>
         <div class="grid-3">
           <div class="card">
             <span class="step-num">1</span>
@@ -60,92 +149,128 @@
           <div class="card">
             <span class="step-num">2</span>
             <h3>Connect your channel</h3>
-            <p>Type your channel’s @handle and paste a free YouTube API key from Google (the page shows you how, in about 3 minutes). Only public numbers are read. You never sign in to Google here.</p>
+            <p>Type your channel’s @handle and paste a free YouTube API key from Google. Your page shows you how, step by step. You never sign in to Google here.</p>
           </div>
           <div class="card">
             <span class="step-num">3</span>
             <h3>Watch it count</h3>
-            <p>Your page lives at <code>/u/yourname</code>. Change the font, colours, sounds and effects, and add Bluesky followers too.</p>
+            <p>Your page lives at <code>/u/yourname</code>. Make it look how you like, add Bluesky followers, and share it when you’re ready.</p>
           </div>
         </div>
       </section>
 
-      <section class="section grid-2" aria-label="What you get">
-        <div>
-          <h2>What your page can show</h2>
-          <ul class="ticks">
-            <li>YouTube total views, subscribers and number of videos</li>
-            <li>Bluesky followers and posts</li>
-            <li>One counter at a time, a grid, or taking turns</li>
-            <li>Rolling 3D or sliding digits, tick sounds, sparks and confetti at milestones</li>
-            <li>A see-through version for OBS and other streaming apps</li>
-          </ul>
-        </div>
-        <div>
-          <h2>Private by default</h2>
+      <section id="privacy" class="section reveal" aria-labelledby="privacy-title">
+        <div class="split">
+          <div>
+            <p class="kicker">Privacy</p>
+            <h2 id="privacy-title" class="mt-0">Your page, your choice</h2>
+            <p class="muted">We keep as little as we can, and you stay in control of it.</p>
+            <p class="fine">Read the <a href="/privacy">Privacy policy</a> for the details.</p>
+          </div>
           <ul class="ticks">
             <li>New pages are private. Only you see yours until you choose to make it public.</li>
             <li>No email, no real name, no advertising and no tracking cookies.</li>
+            <li>Your YouTube API key is never shown on any page.</li>
             <li>Download everything we keep about you, or delete your account, any time.</li>
             <li>Accounts not used for 12 months are deleted automatically.</li>
           </ul>
-          <p class="fine">Read the <a href="/privacy">Privacy policy</a> for the details.</p>
         </div>
       </section>
 
-      <section class="section" aria-labelledby="faq">
-        <h2 id="faq">Questions</h2>
-        <details class="faq">
-          <summary>Does it cost anything?</summary>
-          <p>No. It’s free, with no adverts and no paid extras.</p>
-        </details>
-        <details class="faq">
-          <summary>Why do I need a YouTube API key?</summary>
-          <p>YouTube’s official numbers come from its API, and each key gets a free daily allowance from Google. With your own key, your page has an allowance of its own. Getting one takes about 3 minutes, needs no card, and the steps are on your page. Your key is kept private and only used to read your channel’s public numbers. If the site has a shared key, you can skip this.</p>
-        </details>
-        <details class="faq">
-          <summary>How often do the numbers change?</summary>
-          <p>YouTube numbers are checked about once a minute, and your page shows them as soon as they arrive. YouTube itself only updates channel totals every so often, and it rounds subscriber counts, so the numbers can sit still for a while and then jump.</p>
-        </details>
-        <details class="faq">
-          <summary>Are these the real numbers?</summary>
-          <p>Yes. YouTube numbers come straight from YouTube’s official API and Bluesky numbers from Bluesky’s public API. Nothing is guessed or estimated.</p>
-        </details>
-        <details class="faq">
-          <summary>Can other people see my page?</summary>
-          <p>Only if you make it public on your account page. A public page can be seen by anyone who has its address. You can make it private again at any time.</p>
-        </details>
-        <details class="faq">
-          <summary>How do I use it in OBS?</summary>
-          <p>Make your page public, then open your page’s settings and go to <b>Stream</b>. Copy the address shown there into a <b>Browser</b> source in OBS.</p>
-        </details>
-        <details class="faq">
-          <summary>What if I forget my password?</summary>
-          <p>When you sign up you get a recovery code. Use it on the <a href="/forgot">forgotten password</a> page to choose a new password. Keep it somewhere safe: we don’t have your email, so it’s the only way back in.</p>
-        </details>
-        <details class="faq">
-          <summary>Is this made by YouTube or Bluesky?</summary>
-          <p>No. Live View Counter is an independent site and isn’t affiliated with or endorsed by YouTube, Google or Bluesky.</p>
-        </details>
+      <section id="faq" class="section reveal" aria-labelledby="faq-title">
+        <div class="section-head">
+          <p class="kicker">Questions</p>
+          <h2 id="faq-title">Good to know</h2>
+        </div>
+        <div class="faq-list">
+          <details class="faq">
+            <summary>Does it cost anything?</summary>
+            <p>No. It’s free, with no adverts and no paid extras.</p>
+          </details>
+          <details class="faq">
+            <summary>Why do I need a YouTube API key?</summary>
+            <p>YouTube’s official numbers come from its API, and each key gets a free daily allowance from Google. With your own key, your page has an allowance of its own. Getting one takes about 3 minutes, needs no card, and the steps are on your page. Your key is kept private and only used to read your channel’s public numbers. If the site has a shared key, you can skip this.</p>
+          </details>
+          <details class="faq">
+            <summary>How often do the numbers change?</summary>
+            <p>YouTube numbers are checked about once a minute, and your page shows them as soon as they arrive. YouTube itself only updates channel totals every so often, and it rounds subscriber counts, so the numbers can sit still for a while and then jump.</p>
+          </details>
+          <details class="faq">
+            <summary>Are these the real numbers?</summary>
+            <p>Yes. YouTube numbers come straight from YouTube’s official API and Bluesky numbers from Bluesky’s public API. Nothing is guessed or estimated.</p>
+          </details>
+          <details class="faq">
+            <summary>Can other people see my page?</summary>
+            <p>Only if you make it public on your account page. A public page can be seen by anyone who has its address. You can make it private again at any time.</p>
+          </details>
+          <details class="faq">
+            <summary>How do I use it in OBS?</summary>
+            <p>Make your page public, then open your page’s settings and go to Stream. Copy the address shown there into a Browser source in OBS.</p>
+          </details>
+          <details class="faq">
+            <summary>What if I forget my password?</summary>
+            <p>When you sign up you get a recovery code. Use it on the <a href="/forgot">forgotten password</a> page to choose a new password. Keep it somewhere safe: we don’t have your email, so it’s the only way back in.</p>
+          </details>
+          <details class="faq">
+            <summary>Is this made by YouTube or Bluesky?</summary>
+            <p>No. Live View Counter is an independent site and isn’t affiliated with or endorsed by YouTube, Google or Bluesky.</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="cta reveal" aria-labelledby="cta-title">
+        <h2 id="cta-title">Your page is a few minutes away</h2>
+        <p>Pick a username, connect your channel, and watch your numbers count.</p>
+        <div class="btn-row">
+          <a class="btn large" href="/signup" data-when-guest>Make your page free <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn large ghost" href="/signin" data-when-guest>Sign in</a>
+          <a class="btn large" href="/account" data-user-page data-when-user hidden>Open my page <span class="arrow" aria-hidden="true">→</span></a>
+        </div>
+        <p class="fine mt-s" data-when-guest>You need to be 13 or older to make an account.</p>
       </section>
     </div>
   </main>
 
   <footer class="site-foot">
-    <div class="wrap">
-      <nav aria-label="Site">
-        <a href="/">Home</a>
-        <a href="/privacy">Privacy</a>
+    <div class="wrap foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="/"><img src="/favicon.svg" alt="" width="26" height="26"><span>Live View Counter</span></a>
+        <p>Big, live counters for your YouTube channel and Bluesky profile. Free, private by default, and ready for OBS.</p>
+      </div>
+      <nav class="foot-col" aria-labelledby="fh-product">
+        <h2 id="fh-product">Product</h2>
+        <a href="/#features">Features</a>
+        <a href="/#streams">For streams</a>
+        <a href="/#faq">Questions</a>
+        <a href="/signup">Make your page</a>
+      </nav>
+      <nav class="foot-col" aria-labelledby="fh-account">
+        <h2 id="fh-account">Account</h2>
+        <a href="/signin">Sign in</a>
+        <a href="/account">Your account</a>
+        <a href="/forgot">Forgotten password</a>
+      </nav>
+      <nav class="foot-col" aria-labelledby="fh-legal">
+        <h2 id="fh-legal">Legal</h2>
+        <a href="/privacy">Privacy policy</a>
         <a href="/terms">Terms</a>
         <a href="/cookies">Cookies</a>
         <button type="button" data-cookie-settings>Cookie settings</button>
-        <a href="/contact">Contact and reports</a>
+      </nav>
+      <nav class="foot-col" aria-labelledby="fh-help">
+        <h2 id="fh-help">Help</h2>
+        <a href="/contact">Contact</a>
+        <a href="/contact#report">Report a page</a>
         <a href="/admin">Site owner</a>
       </nav>
-      <p>Live View Counter is run by <span data-owner>NoobVex</span> in the United Kingdom. Not affiliated with or endorsed by YouTube, Google or Bluesky.</p>
+    </div>
+    <div class="wrap foot-bottom">
+      <p>Live View Counter is run by <span data-owner>NoobVex</span> in the United Kingdom.</p>
+      <p>Not affiliated with or endorsed by YouTube, Google or Bluesky.</p>
     </div>
   </footer>
 
+  <script src="/odometer.js"></script>
   <script src="/site.js"></script>
   <script src="/pages.js"></script>
 </body>

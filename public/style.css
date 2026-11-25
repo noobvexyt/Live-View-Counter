@@ -570,6 +570,8 @@ body:not(.counting) .site-footer { background: rgba(12, 12, 12, 0.94); border-to
 }
 .site-footer a:hover, .site-footer button:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
 .site-footer p { margin: 0; }
+.site-footer .foot-home { display: inline-flex; align-items: center; gap: 6px; color: var(--fg-2); font-weight: 600; }
+.site-footer .foot-home img { width: 14px; height: 14px; }
 body.idle .site-footer:not(:focus-within) { opacity: 0; }
 @media (min-width: 900px) {
   body.drawer-open .site-footer { right: var(--drawer-w); }
@@ -596,8 +598,22 @@ body.idle .site-footer:not(:focus-within) { opacity: 0; }
 .consent-links a { color: var(--fg-2); text-underline-offset: 3px; }
 
 /* Website: links on an empty or private page, and under the first-time setup */
-.empty-links { margin: 14px 0 0; }
-.empty-links a, .setup-foot a, .setup-card .fine a { color: #fff; text-underline-offset: 3px; }
+.empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.empty-actions:not(:has(> :not([hidden]))) { display: none; }
+.empty.branded { gap: 14px; max-width: 520px; margin: 0 auto; }
+.empty-logo { width: 56px; height: 56px; margin-bottom: 4px; filter: drop-shadow(0 8px 24px rgba(124, 149, 255, 0.35)); }
+.empty-title { margin: 0; color: #fff; font-size: clamp(26px, 4vw, 34px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+.empty.branded #empty-text { font-size: 16px; line-height: 1.55; color: var(--fg-2); }
+.empty-links { margin: 8px 0 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.empty-links[hidden] { display: none; }
+.empty-links .primary-link {
+  height: 42px; padding: 0 18px; border-radius: 999px; display: inline-flex; align-items: center;
+  background: #f1f1f1; color: #0f0f0f; font-size: 14px; font-weight: 600; text-decoration: none;
+}
+.empty-links .primary-link:hover { background: #d9d9d9; }
+.empty-links .ghost-btn { color: #fff; }
+.empty-links [hidden] { display: none; }
+.setup-foot a, .setup-card .fine a { color: #fff; text-underline-offset: 3px; }
 .setup-foot { margin-top: 18px; text-align: center; }
 .setup-note {
   margin: 16px 0 0; padding: 12px 14px; border-radius: 12px;

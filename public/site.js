@@ -10,6 +10,7 @@
 
   const L = (window.LVC = window.LVC || {});
   const $ = (id) => document.getElementById(id);
+  document.documentElement.classList.add('js');
   const KEY = 'lvc.consent';
   const VERSION = 1;
   const ASK_AGAIN_MS = 365 * 86_400_000; // choices are asked for again after a year
@@ -137,10 +138,40 @@
     const owner = typeof config.owner === 'string' ? config.owner.trim() : '';
     if (owner) for (const el of document.querySelectorAll('[data-owner]')) el.textContent = owner;
     const here = location.pathname.replace(/\.html$/, '').replace(/\/index$/, '/') || '/';
-    for (const a of document.querySelectorAll('.head-nav a')) {
+    for (const a of document.querySelectorAll('.head-nav a, .head-actions a.head-link')) {
       if (a.getAttribute('href') === here) a.setAttribute('aria-current', 'page');
     }
   }
+
+  // The header's menu on small screens.
+  function wireMenu() {
+    const head = document.querySelector('.site-head');
+    const btn = head && head.querySelector('[data-menu-toggle]');
+    if (!btn) return;
+    const set = (open) => {
+      head.classList.toggle('open', open);
+      btn.setAttribute('aria-expanded', String(open));
+    };
+    btn.addEventListener('click', () => set(!head.classList.contains('open')));
+    head.addEventListener('click', (e) => { if (e.target.closest('.head-menu a')) set(false); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && head.classList.contains('open')) { set(false); btn.focus(); }
+    });
+    document.addEventListener('click', (e) => { if (!head.contains(e.target)) set(false); });
+    window.matchMedia('(min-width: 821px)').addEventListener('change', (m) => { if (m.matches) set(false); });
+  }
+
+  // Sections that fade in as they scroll into view (home page).
+  function wireReveal() {
+    const els = document.querySelectorAll('.reveal');
+    if (!els.length) return;
+    if (!('IntersectionObserver' in window)) { for (const el of els) el.classList.add('in'); return; }
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }, { rootMargin: '0px 0px -8% 0px' });
+    for (const el of els) io.observe(el);
+  }
+  if (document.body && document.body.dataset.page) { wireMenu(); wireReveal(); }
 
   function wire() {
     ensureBanner();

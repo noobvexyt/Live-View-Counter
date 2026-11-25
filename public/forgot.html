@@ -14,70 +14,120 @@
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-head">
     <div class="wrap head-row">
-      <a class="brand" href="/"><img src="/favicon.svg" alt="" width="28" height="28">Live View Counter</a>
-      <nav class="head-nav" aria-label="Main">
-        <a href="/signin">Sign in</a>
-      </nav>
+      <a class="brand" href="/"><img src="/favicon.svg" alt="" width="30" height="30"><span>Live View Counter</span></a>
+      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-menu" data-menu-toggle><span class="sr-only">Menu</span><svg class="i-open" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg><svg class="i-close" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="m6 6 12 12M18 6 6 18"/></svg></button>
+      <div id="site-menu" class="head-menu">
+        <nav class="head-nav" aria-label="Main">
+          <a href="/#features">Features</a>
+          <a href="/#streams">For streams</a>
+          <a href="/#faq">Questions</a>
+          <a href="/contact">Contact</a>
+        </nav>
+        <div class="head-actions">
+          <a class="head-link" href="/signin" data-when-guest>Sign in</a>
+          <a class="btn small" href="/signup" data-when-guest>Get started</a>
+          <a class="head-link" href="/account" data-when-user hidden>Account</a>
+          <button class="head-link" type="button" data-signout data-when-user hidden>Sign out</button>
+          <a class="btn small" href="/account" data-user-page data-when-user hidden>My page</a>
+        </div>
+      </div>
     </div>
   </header>
 
   <main id="main">
-    <div class="wrap thin">
-      <section id="forgot-panel" class="panel" aria-labelledby="forgot-title">
-        <h1 id="forgot-title">Forgotten your password?</h1>
-        <p class="muted">Use the recovery code you saved when you made your account to choose a new password.</p>
-        <form id="forgot-form" class="form" novalidate>
-          <div class="field">
-            <label class="field-label" for="fo-username">Username</label>
-            <input id="fo-username" name="username" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="40" required>
-          </div>
-          <div class="field">
-            <label class="field-label" for="fo-code">Recovery code</label>
-            <input id="fo-code" name="code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" required>
-          </div>
-          <div class="field">
-            <label class="field-label" for="fo-password">New password</label>
-            <div class="pw-row">
-              <input id="fo-password" name="password" type="password" autocomplete="new-password" maxlength="200" aria-describedby="fo-password-hint" required>
-              <button class="btn ghost small" type="button" data-toggle-pw="fo-password" aria-controls="fo-password">Show</button>
+    <div class="wrap auth">
+      <div class="auth-main">
+        <section id="forgot-panel" class="panel" aria-labelledby="forgot-title">
+          <h1 id="forgot-title">Forgotten your password?</h1>
+          <p class="muted">Use the recovery code you saved when you made your account to choose a new password.</p>
+          <form id="forgot-form" class="form" novalidate>
+            <div class="field">
+              <label class="field-label" for="fo-username">Username</label>
+              <input id="fo-username" name="username" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="40" required>
             </div>
-            <span id="fo-password-hint" class="field-hint">At least 10 characters. Three random words together works well.</span>
-            <span class="caps" data-caps-for="fo-password" hidden>Caps Lock is on.</span>
+            <div class="field">
+              <label class="field-label" for="fo-code">Recovery code</label>
+              <input id="fo-code" name="code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" required>
+            </div>
+            <div class="field">
+              <label class="field-label" for="fo-password">New password</label>
+              <div class="pw-row">
+                <input id="fo-password" name="password" type="password" autocomplete="new-password" maxlength="200" aria-describedby="fo-password-hint" required>
+                <button class="btn ghost small" type="button" data-toggle-pw="fo-password" aria-controls="fo-password">Show</button>
+              </div>
+              <span id="fo-password-hint" class="field-hint">At least 10 characters. Three random words together works well.</span>
+            <div class="strength" data-strength-for="fo-password" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+              <span class="caps" data-caps-for="fo-password" hidden>Caps Lock is on.</span>
+            </div>
+            <p id="forgot-error" class="form-error" role="alert" hidden></p>
+            <button id="btn-forgot" class="btn" type="submit">Set my new password</button>
+          </form>
+          <p class="fine mt-m">Lost your recovery code too? We can’t reset accounts without it, because we don’t know who owns them. You can <a href="/signup">make a new account</a>. Your old one is deleted automatically after 12 months without use.</p>
+        </section>
+  
+        <section id="code-panel" class="panel" aria-labelledby="code-title" hidden>
+          <h1 id="code-title" tabindex="-1">Password changed</h1>
+          <p>You’re signed in, and you’ve been signed out everywhere else. Your old recovery code no longer works. Here’s your new one:</p>
+          <div id="code-value" class="code-box"></div>
+          <div class="btn-row mt-0">
+            <button id="btn-copy-code" class="btn ghost small" type="button">Copy</button>
+            <button id="btn-download-code" class="btn ghost small" type="button">Download as a file</button>
           </div>
-          <p id="forgot-error" class="form-error" role="alert" hidden></p>
-          <button id="btn-forgot" class="btn" type="submit">Set my new password</button>
-        </form>
-        <p class="fine mt-m">Lost your recovery code too? We can’t reset accounts without it, because we don’t know who owns them. You can <a href="/signup">make a new account</a>. Your old one is deleted automatically after 12 months without use.</p>
-      </section>
-
-      <section id="code-panel" class="panel" aria-labelledby="code-title" hidden>
-        <h1 id="code-title" tabindex="-1">Password changed</h1>
-        <p>You’re signed in, and you’ve been signed out everywhere else. Your old recovery code no longer works. Here’s your new one:</p>
-        <div id="code-value" class="code-box"></div>
-        <div class="btn-row mt-0">
-          <button id="btn-copy-code" class="btn ghost small" type="button">Copy</button>
-          <button id="btn-download-code" class="btn ghost small" type="button">Download as a file</button>
-        </div>
-        <label class="check mt-s"><input id="code-saved" type="checkbox"><span>I’ve saved my new recovery code</span></label>
-        <div class="btn-row">
-          <a id="btn-continue" class="btn" href="/account" aria-disabled="true">Go to my page</a>
-        </div>
-      </section>
+          <label class="check mt-s"><input id="code-saved" type="checkbox"><span>I’ve saved my new recovery code</span></label>
+          <div class="btn-row">
+            <a id="btn-continue" class="btn" href="/account" aria-disabled="true">Go to my page</a>
+          </div>
+        </section>
+      </div>
+      <aside class="auth-side" aria-label="About recovery codes">
+        <p class="kicker">Recovery code</p>
+        <h2>Back in with your code</h2>
+        <p>Your recovery code is the one you saved when you made your account, or the newest one you made on your account page.</p>
+        <ul class="ticks">
+          <li>Each code works once</li>
+          <li>You get a new one straight away</li>
+          <li>Every other device is signed out</li>
+        </ul>
+      </aside>
     </div>
   </main>
 
   <footer class="site-foot">
-    <div class="wrap">
-      <nav aria-label="Site">
-        <a href="/">Home</a>
-        <a href="/privacy">Privacy</a>
+    <div class="wrap foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="/"><img src="/favicon.svg" alt="" width="26" height="26"><span>Live View Counter</span></a>
+        <p>Big, live counters for your YouTube channel and Bluesky profile. Free, private by default, and ready for OBS.</p>
+      </div>
+      <nav class="foot-col" aria-labelledby="fh-product">
+        <h2 id="fh-product">Product</h2>
+        <a href="/#features">Features</a>
+        <a href="/#streams">For streams</a>
+        <a href="/#faq">Questions</a>
+        <a href="/signup">Make your page</a>
+      </nav>
+      <nav class="foot-col" aria-labelledby="fh-account">
+        <h2 id="fh-account">Account</h2>
+        <a href="/signin">Sign in</a>
+        <a href="/account">Your account</a>
+        <a href="/forgot">Forgotten password</a>
+      </nav>
+      <nav class="foot-col" aria-labelledby="fh-legal">
+        <h2 id="fh-legal">Legal</h2>
+        <a href="/privacy">Privacy policy</a>
         <a href="/terms">Terms</a>
         <a href="/cookies">Cookies</a>
         <button type="button" data-cookie-settings>Cookie settings</button>
-        <a href="/contact">Contact and reports</a>
+      </nav>
+      <nav class="foot-col" aria-labelledby="fh-help">
+        <h2 id="fh-help">Help</h2>
+        <a href="/contact">Contact</a>
+        <a href="/contact#report">Report a page</a>
         <a href="/admin">Site owner</a>
       </nav>
-      <p>Live View Counter is run by <span data-owner>NoobVex</span> in the United Kingdom. Not affiliated with or endorsed by YouTube, Google or Bluesky.</p>
+    </div>
+    <div class="wrap foot-bottom">
+      <p>Live View Counter is run by <span data-owner>NoobVex</span> in the United Kingdom.</p>
+      <p>Not affiliated with or endorsed by YouTube, Google or Bluesky.</p>
     </div>
   </footer>
 

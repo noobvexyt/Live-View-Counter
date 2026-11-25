@@ -87,6 +87,23 @@
     input.addEventListener('blur', () => { hint.hidden = true; });
   }
 
+  // A rough guide to how strong a new password is (the server only insists on 10 characters).
+  function strength(pw) {
+    if (pw.length < 10) return pw ? 1 : 0;
+    let n = 2;
+    const kinds = [/[a-z]/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter((re) => re.test(pw)).length;
+    if (pw.length >= 14 || kinds >= 3) n++;
+    if (pw.length >= 18 && kinds >= 2) n++;
+    if (/^(.)\1+$/.test(pw) || /^(password|qwerty|1234)/i.test(pw)) n = 1;
+    return Math.min(4, n);
+  }
+  for (const meter of document.querySelectorAll('[data-strength-for]')) {
+    const input = $(meter.dataset.strengthFor);
+    const update = () => { meter.dataset.level = String(strength(input.value)); };
+    input.addEventListener('input', update);
+    update();
+  }
+
   const cleanName = (v) => String(v || '').trim().replace(/^@/, '').toLowerCase();
   // Where to go after signing in: only this site's own pages.
   const safeNext = (v) => (/^\/(u\/[a-z0-9_-]{3,24}|account|admin)?$/.test(String(v || '')) ? String(v) : '');
@@ -157,19 +174,40 @@
   }
 
   // ---------- home ----------
+  // The example page: made-up numbers rolling the way real pages do.
   function home() {
     const el = $('demo-number');
     if (!el) return;
-    let n = 1284519;
+    if ($('demo-host')) $('demo-host').textContent = location.host || 'your-site';
     const fmt = (v) => v.toLocaleString('en-GB');
+    const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let views = 1284519;
+    let subs = 48200;
+    let sky = 3417;
+    let odo = null;
+    if (window.Odometer && !still) {
+      el.textContent = '';
+      odo = new window.Odometer(el);
+      odo.set(views, { instant: true });
+    }
+    const show = () => {
+      if (odo) odo.set(views, { duration: 650 });
+      else el.textContent = fmt(views);
+      $('demo-subs').textContent = fmt(subs);
+      $('demo-sky').textContent = fmt(sky);
+      if ($('demo-overlay')) $('demo-overlay').textContent = fmt(subs);
+    };
+    let n = 0;
     const tick = () => {
       if (!document.hidden) {
-        n += 1 + Math.floor(Math.random() * 3);
-        el.textContent = fmt(n);
+        views += 3 + Math.floor(Math.random() * 18);
+        if (++n % 4 === 0) subs += 100; // YouTube rounds subscriber counts
+        if (Math.random() < 0.35) sky += 1;
+        show();
       }
-      setTimeout(tick, 900 + Math.random() * 1600);
+      setTimeout(tick, 1800 + Math.random() * 1400);
     };
-    setTimeout(tick, 1200);
+    if (!still) setTimeout(tick, 1400);
   }
 
   // ---------- sign up ----------
@@ -298,18 +336,74 @@
     }
     let me = data;
     $('account').hidden = false;
+    $('hello-name').textContent = `, ${me.name}`;
     const pageUrl = `${location.origin}${me.page}`;
+    const overlayUrl = `${pageUrl}?overlay`;
     $('page-url').textContent = pageUrl;
     $('btn-open-page').href = me.page;
+    $('ck-channel-btn').href = me.page;
     $('btn-copy-url').addEventListener('click', () => copyText(pageUrl, $('btn-copy-url')));
+    $('btn-copy-overlay').addEventListener('click', () => {
+      if (!me.public) {
+        $('sec-visibility').scrollIntoView({ block: 'start' });
+        $('btn-visibility').focus({ preventScroll: true });
+        return;
+      }
+      copyText(overlayUrl, $('btn-copy-overlay'));
+      $('ck-obs').classList.add('done');
+    });
     $('f-name').textContent = me.name;
     $('pw-username').value = me.name;
     $('f-created').textContent = when(me.createdAt);
     $('f-signin').textContent = when(me.signInAt);
     $('f-pw').textContent = when(me.pwAt);
     $('f-youtube').textContent = me.youtube ? me.youtube.input : 'Not connected';
+    $('f-key').textContent = me.keyHint ? `Saved, ending ${me.keyHint.replace(/^…/, '')}` : me.youtube ? 'None (the site’s shared key is used)' : 'None';
     $('f-counters').textContent = String(me.counters || 0);
     $('f-session').textContent = me.remembered ? when(me.sessionEnds) : 'You close your browser (or 12 hours at most)';
+
+    // The page card: channel, numbers and what's left to set up.
+    const fmt = (n) => (n == null || !Number.isFinite(Number(n)) ? '–' : Number(n).toLocaleString('en-GB'));
+    const renderChannel = (state) => {
+      const ch = state && state.channel;
+      $('page-title').textContent = ch ? ch.title : me.youtube ? me.youtube.input : 'No channel yet';
+      const letter = ((ch && ch.title) || me.name || '?').trim().charAt(0).toUpperCase();
+      $('pc-letter').textContent = letter;
+      const img = $('pc-avatar');
+      if (ch && ch.thumb && /^\/api\/avatar\?/.test(ch.thumb)) {
+        img.onload = () => { img.hidden = false; $('pc-letter').hidden = true; };
+        img.onerror = () => { img.hidden = true; $('pc-letter').hidden = false; };
+        img.src = ch.thumb;
+      }
+      $('pc-views').textContent = fmt(state && state.total);
+      $('pc-subs').textContent = fmt(ch && ch.subs);
+      $('pc-videos').textContent = fmt(ch && ch.videoCount);
+      const yt = $('yt-pill');
+      yt.textContent = me.youtube ? 'YouTube connected' : 'No YouTube channel';
+      yt.className = `pill ${me.youtube ? 'good' : 'warn'}`;
+      const key = $('key-pill');
+      key.hidden = !me.youtube;
+      key.textContent = me.keyHint ? 'Your own API key' : 'Shared API key';
+      $('ck-channel').classList.toggle('done', Boolean(me.youtube));
+      $('ck-channel-text').textContent = me.youtube
+        ? `Connected: ${ch ? ch.title : me.youtube.input}.`
+        : 'Type your @handle and paste your free API key on your page.';
+      $('ck-channel-btn').textContent = me.youtube ? 'Change' : 'Connect';
+    };
+    renderChannel(null);
+    get('/api/me/state').then(({ data: st }) => { if (st && !st.error && st.page) renderChannel(st); });
+
+    // Section links: the one you're looking at is highlighted.
+    const links = [...document.querySelectorAll('.dash-nav a')];
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          for (const a of links) a.classList.toggle('on', a.getAttribute('href') === `#${e.target.id}`);
+        }
+      }, { rootMargin: '-30% 0px -60% 0px' });
+      for (const a of links) { const sec = document.querySelector(a.getAttribute('href')); if (sec) io.observe(sec); }
+    }
 
     if (me.suspended) {
       const note = $('suspended-note');
@@ -322,12 +416,18 @@
     const renderVis = () => {
       const pill = $('vis-pill');
       pill.textContent = me.public ? 'Public' : 'Private';
-      pill.classList.toggle('on', me.public);
+      pill.className = `pill${me.public ? ' on' : ''}`;
       $('vis-text').textContent = me.public
-        ? 'Anyone with the address can see your page. Only you can change it.'
-        : 'Only you can see your page, while you’re signed in.';
+        ? 'Your page is public: anyone with the address can see it. Only you can change it.'
+        : 'Your page is private: only you can see it, while you’re signed in.';
       visBtn.textContent = me.public ? 'Make my page private' : 'Make my page public';
       visBtn.disabled = Boolean(me.suspended);
+      $('ck-public').classList.toggle('done', me.public);
+      $('ck-public-text').textContent = me.public ? 'Anyone with the address can see it.' : 'Only if you want to share it or use it in OBS.';
+      $('ck-obs-text').textContent = me.public
+        ? 'In OBS, add a Browser source and paste your overlay address. More options are under Stream in your page’s settings.'
+        : 'Make your page public first: OBS isn’t signed in.';
+      $('btn-copy-overlay').textContent = me.public ? 'Copy overlay address' : 'Make public first';
     };
     renderVis();
     visBtn.addEventListener('click', async () => {
