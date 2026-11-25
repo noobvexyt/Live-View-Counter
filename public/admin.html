@@ -25,7 +25,7 @@
     <div class="wrap narrow">
       <div class="doc">
         <h1>Site owner</h1>
-        <p class="muted">For the person who runs this site: switch on YouTube for everyone, and deal with reports. This is separate from your own account and page on the site.</p>
+        <p class="muted">For the person who runs this site: an optional shared YouTube key, and dealing with reports. This is separate from your own account and page on the site.</p>
       </div>
 
       <section id="admin-login" class="panel thin" aria-labelledby="al-title" hidden>
@@ -49,13 +49,13 @@
         <section id="setup" class="acct-section" aria-labelledby="setup-title">
           <h2 id="setup-title">Set up the site</h2>
           <div class="setup-step">
-            <h3><span class="step-num small">1</span>Switch on YouTube</h3>
-            <p class="muted">The site reads everyone’s channel numbers with one YouTube API key: yours. It’s free from Google and takes about 3 minutes to get.</p>
+            <h3><span class="step-num small">1</span>Shared YouTube key (optional)</h3>
+            <p class="muted">Everyone pastes their own free YouTube API key when they add their channel, so the site works without this. If you add a key here, people can skip that step: channels added without a key of their own are read with this one.</p>
             <p id="yt-status" class="notice" role="status">Checking…</p>
             <div id="yt-issue" class="notice bad mt-s" hidden></div>
             <form id="yt-form" class="form" novalidate>
               <div class="field">
-                <label class="field-label" for="yt-key"><span id="yt-key-label">Paste your YouTube API key</span></label>
+                <label class="field-label" for="yt-key"><span id="yt-key-label">Paste a shared YouTube API key</span></label>
                 <div class="pw-row">
                   <input id="yt-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="200" placeholder="AIza…">
                   <button class="btn ghost small" type="button" data-toggle-pw="yt-key" aria-controls="yt-key">Show</button>
@@ -70,7 +70,7 @@
             </form>
             <p id="yt-done" class="notice good mt-s" role="status" hidden></p>
             <details id="yt-guide" class="guide">
-              <summary>How to get a free YouTube API key</summary>
+              <summary>How to get a free YouTube API key (about 3 minutes)</summary>
               <ol class="howto">
                 <li>Open <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener noreferrer">Google Cloud: new project</a> and sign in with your Google account. Name the project <b>Live View Counter website</b> and click <b>Create</b>.</li>
                 <li>Open <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener noreferrer">YouTube Data API v3</a>. Check your new project is selected at the top of the page, then click <b>Enable</b>.</li>
@@ -78,12 +78,12 @@
                 <li>Recommended: open the key’s settings. Under <b>API restrictions</b> choose <b>Restrict key</b>, tick <b>YouTube Data API v3</b> and click <b>Save</b>. Leave <b>Application restrictions</b> set to <b>None</b>, because the site’s server uses the key, not people’s browsers.</li>
                 <li>Paste the key in the box above and click <b>Check and save</b>.</li>
               </ol>
-              <p class="fine">No card or billing needed. Use a new key just for this website, not the one the counter on your computer uses, so they don’t share one daily allowance. Each 10,000-unit day covers up to about 300 channels being watched at once.</p>
+              <p class="fine">No card or billing needed. Use a new key just for this website, not the one the counter on your computer uses, so they don’t share one daily allowance. Each 10,000-unit day covers up to about 300 channels being watched at once. Pages that use their owner’s own key don’t count towards that.</p>
             </details>
           </div>
           <div class="setup-step">
             <h3><span class="step-num small">2</span>Make your own page</h3>
-            <p data-when-guest>Your own counter page uses a normal account on the site, not these owner tools. <a href="/signup">Sign up</a> (or <a href="/signin">sign in</a>), then type your channel’s @handle on the page you get.</p>
+            <p data-when-guest>Your own counter page uses a normal account on the site, not these owner tools. <a href="/signup">Sign up</a> (or <a href="/signin">sign in</a>), then type your channel’s @handle (and your own API key, unless you saved a shared one above) on the page you get.</p>
             <p data-when-user hidden>You’re signed in as <b data-user-name></b>. <a href="/account" data-user-page>Open your page</a> to add your channel. It stays private until you make it public on your <a href="/account">account page</a>.</p>
           </div>
         </section>
@@ -121,6 +121,7 @@
               <div><dt>Made</dt><dd id="fd-created"></dd></div>
               <div><dt>Last signed in</dt><dd id="fd-signin"></dd></div>
               <div><dt>YouTube channel ID</dt><dd id="fd-yt"></dd></div>
+              <div><dt>Own YouTube API key</dt><dd id="fd-key"></dd></div>
               <div><dt>Counters</dt><dd id="fd-counters"></dd></div>
               <div><dt>Suspended</dt><dd id="fd-suspended"></dd></div>
             </dl>

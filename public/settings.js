@@ -108,8 +108,7 @@
     const allowed = (A.config && A.config.platforms) || ['youtube', 'bluesky'];
     for (const input of platformBox.querySelectorAll('input')) input.closest('label').hidden = !allowed.includes(input.value);
     if (!allowed.includes(addPlatform)) setAddPlatform(allowed.find((p) => p !== 'youtube') || allowed[0]);
-    $('set-key-field').hidden = true; // the website uses its own key
-    $('set-key-env').hidden = true;
+    $('set-key-env').hidden = true; // (the website: everyone can paste their own key)
     // No uploaded sounds on the website.
     const custom = $('tick-grid').querySelector('input[value="custom"]');
     if (custom) custom.closest('.snd').hidden = true;
@@ -238,9 +237,7 @@
         out.status = 'error';
         out.error = !A.hosted
           ? 'YouTube isn’t connected yet (see the App tab).'
-          : A.config && A.config.ytAvailable === false
-            ? 'YouTube isn’t switched on for this site yet.'
-            : 'Not connected yet. Add your channel under the Channel tab.';
+          : 'Not connected yet. Add your channel under the Channel tab.';
         out.name = 'YouTube';
       } else if (ch) {
         out.name = ch.title;
@@ -611,6 +608,7 @@
   });
 
   // ---------- app: YouTube connection, details, background, backup ----------
+  let keyNeeded = false; // website: no saved key of their own, and no site key to fall back on
   async function loadConfig() {
     const c = await A.getConfig();
     if (document.activeElement !== $('set-channel')) {
@@ -618,7 +616,18 @@
       $('set-channel').value = c.channelInput || (snap.channel && (snap.channel.handle || snap.channel.id)) || '';
     }
     $('set-key').placeholder = c.keyHint ? `Saved key ${c.keyHint}` : 'Paste your API key';
-    $('btn-disconnect').hidden = !c.configured;
+    if (A.hosted) {
+      // Everyone can paste their own free key; it's optional when they saved one or the site has one.
+      keyNeeded = !c.keyHint && !c.ytAvailable;
+      $('set-key-label').textContent = c.keyHint ? 'Your API key (saved)' : keyNeeded ? 'Your API key' : 'Your API key (optional)';
+      $('set-key-hint').textContent = c.keyHint
+        ? 'Leave this empty to keep using your saved key, or paste a new one to replace it. It’s never shown on any page.'
+        : keyNeeded
+          ? 'Free from Google (steps below). It’s kept with your account, never shown on any page, and only used to read your channel’s public numbers.'
+          : 'Leave this empty to use this site’s key, or paste your own free key (steps below). It’s never shown on any page.';
+      if (keyNeeded && !c.configured) $('set-key-guide').open = true;
+    }
+    $('btn-disconnect').hidden = !c.configured && !c.keyHint;
     if (A.hosted && c.user) {
       const pub = Boolean(c.user.public);
       $('page-visibility').textContent = pub
@@ -656,8 +665,13 @@
     e.preventDefault();
     const inputs = { channel: $('set-channel'), apiKey: $('set-key') };
     const body = { channel: inputs.channel.value.trim() };
-    if (!A.hosted && inputs.apiKey.value.trim()) body.apiKey = inputs.apiKey.value.trim();
+    const key = A.hosted ? inputs.apiKey.value.replace(/\s+/g, '') : inputs.apiKey.value.trim();
+    if (key) body.apiKey = key;
     if (A.hosted && !body.channel) return A.showError($('settings-error'), { field: 'channel', message: 'Enter your channel’s @handle or a link to it.' }, inputs);
+    if (A.hosted && keyNeeded && !key) {
+      $('set-key-guide').open = true;
+      return A.showError($('settings-error'), { field: 'apiKey', message: 'Paste your YouTube Data API key. It’s free from Google, and the steps below show how to get one.' }, inputs);
+    }
     const btn = $('btn-save');
     btn.disabled = true;
     btn.textContent = 'Saving…';
@@ -676,7 +690,7 @@
   });
 
   $('btn-disconnect').addEventListener('click', async () => {
-    const where = A.hosted ? 'your channel from your page' : 'the saved API key from this computer';
+    const where = A.hosted ? 'your channel from your page, and deletes your saved API key' : 'the saved API key from this computer';
     if (!window.confirm(`Disconnect YouTube? This removes ${where}. Your other counters keep going, and you can connect again any time.`)) return;
     const res = await A.postJson(A.api('disconnect'));
     if (!res.ok) return A.showError($('settings-error'), res.error || {}, {});

@@ -1259,47 +1259,56 @@
   async function prefillSetup() {
     const c = await getConfig();
     if (c.channelInput && !$('in-channel').value) $('in-channel').value = c.channelInput;
-    renderYtOff(c);
+    renderKeyField(c);
   }
 
-  // Website: says up front when the site has no YouTube API key yet, and where its owner adds one.
-  function renderYtOff(c) {
-    if (!HOSTED || !c || typeof c.ytAvailable !== 'boolean') return;
-    CFG.ytAvailable = c.ytAvailable;
-    $('yt-off').hidden = c.ytAvailable;
-    $('yt-off-text').textContent = c.moderator
-      ? 'YouTube is off because this site doesn’t have a YouTube API key yet.'
-      : 'YouTube isn’t switched on for this site yet, so channels can’t be added right now. You can count Bluesky followers in the meantime.';
+  // Website: everyone can paste their own free API key. It's needed unless they saved one already or
+  // the site owner added a key everyone can use.
+  const keyNeeded = () => HOSTED && !CFG.keyHint && !CFG.ytAvailable;
+  function renderKeyField(c) {
+    if (!HOSTED || !c || typeof c !== 'object') return;
+    if (typeof c.ytAvailable === 'boolean') CFG.ytAvailable = c.ytAvailable;
+    if (typeof c.keyHint === 'string') CFG.keyHint = c.keyHint;
+    const input = $('in-key');
+    if (CFG.keyHint) {
+      $('in-key-label').textContent = 'YouTube Data API key (saved)';
+      input.placeholder = `Saved key ${CFG.keyHint}`;
+      $('in-key-hint').textContent = 'Leave this empty to keep using your saved key, or paste a new one to replace it.';
+    } else if (CFG.ytAvailable) {
+      $('in-key-label').textContent = 'YouTube Data API key (optional)';
+      input.placeholder = 'AIza…';
+      $('in-key-hint').textContent = 'Leave this empty to use this site’s key, or paste your own free key (steps below). Yours is kept with your account, never shown on any page, and only used to read your channel’s public numbers.';
+    } else {
+      $('in-key-label').textContent = 'YouTube Data API key';
+      input.placeholder = 'AIza…';
+      $('in-key-hint').textContent = 'Free from Google: the steps below show how to get one (about 3 minutes). It’s kept with your account in this site’s private database, never shown on any page, and only used to read your channel’s public numbers.';
+    }
+    $('key-guide').open = keyNeeded();
   }
-  // (Checked again when you come back to this tab, for example after adding the key in another one.)
-  let ytCheckedAt = 0;
-  const recheckYt = () => {
-    if (!HOSTED || view !== 'setup' || document.hidden || Date.now() - ytCheckedAt < 3_000) return;
-    ytCheckedAt = Date.now();
-    getConfig().then(renderYtOff);
-  };
-  document.addEventListener('visibilitychange', recheckYt);
-  window.addEventListener('focus', recheckYt);
 
   $('setup-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = $('btn-connect');
     const inputs = { channel: $('in-channel'), apiKey: $('in-key') };
     const body = { channel: inputs.channel.value.trim() };
-    if (!HOSTED) body.apiKey = inputs.apiKey.value.trim(); // the website uses its own key
+    const key = inputs.apiKey.value.replace(/\s+/g, '');
+    if (key) body.apiKey = key;
     $('setup-error').hidden = true;
     if (!body.channel) return showError($('setup-error'), { field: 'channel', message: 'Enter your channel’s @handle or a link to it.' }, inputs);
-    if (!HOSTED && !body.apiKey) return showError($('setup-error'), { field: 'apiKey', message: 'Paste your YouTube Data API key. The steps below show how to get one.' }, inputs);
+    if ((!HOSTED || keyNeeded()) && !body.apiKey) {
+      $('key-guide').open = true;
+      return showError($('setup-error'), { field: 'apiKey', message: 'Paste your YouTube Data API key. It’s free from Google, and the steps below show how to get one.' }, inputs);
+    }
     btn.disabled = true;
     btn.textContent = 'Checking with YouTube…';
     const res = await postJson(api('connect'), body);
     btn.disabled = false;
     btn.textContent = 'Start counting';
     if (!res.ok) {
-      if (res.error && res.error.kind === 'notSetUp') renderYtOff({ ytAvailable: false, moderator: Boolean(CFG.moderator) });
+      if (res.error && res.error.field === 'apiKey') $('key-guide').open = true;
       return showError($('setup-error'), res.error || {}, inputs);
     }
-    if (HOSTED) renderYtOff({ ytAvailable: true });
+    if (HOSTED && typeof res.keyHint === 'string') renderKeyField({ keyHint: res.keyHint });
     inputs.apiKey.value = '';
     for (const i of Object.values(inputs)) i.classList.remove('invalid');
     if (res.state) applySnapshot(res.state); // website: show the channel straight away
@@ -1448,7 +1457,6 @@
         skipSetup = localStorage.getItem(skipKey()) === '1';
       } catch (e) { skipSetup = false; }
       OWN = Boolean(cfg.user && cfg.user.name === PAGE);
-      $('in-key-field').hidden = true; // the website uses its own key
       document.documentElement.classList.toggle('admin', canEdit());
       if (!OWN && !OVERLAY) {
         const report = $('report-link');

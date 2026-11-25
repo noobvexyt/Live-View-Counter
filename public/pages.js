@@ -476,16 +476,16 @@
     function renderYouTube(yt) {
       const status = $('yt-status');
       const on = Boolean(yt.using);
-      status.className = `notice ${on ? (yt.issue ? 'warn' : 'good') : 'warn'}`;
+      status.className = `notice${on ? (yt.issue ? ' warn' : ' good') : ''}`;
       if (yt.using === 'site') {
         const added = yt.saved.addedAt ? `, added ${when(yt.saved.addedAt)}` : '';
-        status.textContent = `YouTube is on. The site is using the key ending in “${yt.saved.last4}”${added}${yt.saved.earlier ? ' (on the earlier version of the site)' : ''}.`;
+        status.textContent = `A shared key is saved: the one ending in “${yt.saved.last4}”${added}${yt.saved.earlier ? ' (on the earlier version of the site)' : ''}. Channels added without a key of their own use it.`;
       } else if (yt.using === 'vercel') {
-        status.textContent = 'YouTube is on, using the YOUTUBE_API_KEY set in Vercel. Paste a key here to use that one instead.';
+        status.textContent = 'A shared key is set in Vercel (YOUTUBE_API_KEY). Channels added without a key of their own use it. Paste a key here to use that one instead.';
       } else {
-        status.textContent = 'YouTube is off: no API key yet. Until you add one, nobody can add a YouTube channel. Bluesky counters work already.';
+        status.textContent = 'No shared key, and that’s fine: everyone pastes their own free key when they add their channel. Add one here only if you want people to be able to skip that step.';
       }
-      $('ov-yt').textContent = on ? (yt.issue ? 'On, with a problem (see above)' : 'On') : 'Off: no API key yet';
+      $('ov-yt').textContent = on ? (yt.issue ? 'People’s own keys, and a shared key with a problem (see above)' : 'People’s own keys, and a shared key') : 'People’s own keys (no shared key)';
 
       const issue = $('yt-issue');
       issue.textContent = '';
@@ -496,9 +496,8 @@
         addLink(issue, yt.issue.link);
       }
 
-      $('yt-key-label').textContent = yt.using === 'site' ? 'Replace the key' : 'Paste your YouTube API key';
+      $('yt-key-label').textContent = yt.using === 'site' ? 'Replace the shared key' : 'Paste a shared YouTube API key';
       $('btn-yt-remove').hidden = yt.using !== 'site';
-      $('yt-guide').open = !on;
     }
 
     $('yt-form').addEventListener('submit', async (e) => {
@@ -527,11 +526,11 @@
       renderYouTube(data.youtube || {});
       done($('yt-done'), data.note
         ? `Saved. ${data.note}`
-        : 'Google accepted the key and it’s saved. Everyone can now add their YouTube channel, and pages that were waiting update within a minute.');
+        : 'Google accepted the key and it’s saved. Channels added without a key of their own now use it, and pages that were waiting update within a minute.');
     });
 
     $('btn-yt-remove').addEventListener('click', async () => {
-      if (!window.confirm('Remove the saved YouTube API key? YouTube counters stop updating until you add a key again.')) return;
+      if (!window.confirm('Remove the shared YouTube API key? Pages that use their owner’s own key keep going. Pages that relied on this one stop updating until their owner pastes their own key, or you add a shared key again.')) return;
       const err = $('yt-error');
       clearError(err, { key: $('yt-key') });
       $('yt-done').hidden = true;
@@ -539,7 +538,7 @@
       if (status === 403) return showLogin();
       if (!data.ok) return showError(err, data.error);
       renderYouTube(data.youtube || {});
-      done($('yt-done'), 'The saved key has been removed.');
+      done($('yt-done'), 'The shared key has been removed.');
     });
 
     $('admin-form').addEventListener('submit', async (e) => {
@@ -573,6 +572,7 @@
       $('fd-created').textContent = when(acc.createdAt);
       $('fd-signin').textContent = when(acc.signInAt);
       $('fd-yt').textContent = acc.youtubeChannel || 'None';
+      $('fd-key').textContent = acc.ownKey ? 'Yes (never shown)' : 'No';
       $('fd-counters').textContent = String(acc.counters);
       $('fd-suspended').textContent = acc.suspended ? `Yes, since ${when(acc.suspended.at)}${acc.suspended.reason ? `: ${acc.suspended.reason}` : ''}` : 'No';
       $('btn-suspend').hidden = Boolean(acc.suspended);

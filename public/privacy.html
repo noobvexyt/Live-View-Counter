@@ -27,7 +27,7 @@
   <main id="main">
     <article class="wrap narrow doc">
       <h1>Privacy policy</h1>
-      <p class="updated">Last updated: 24 November 2026</p>
+      <p class="updated">Last updated: 25 November 2026</p>
 
       <div class="summary">
         <p><strong>In short</strong></p>
@@ -72,6 +72,7 @@
         <li>that you confirmed you’re <strong>13 or older</strong>, and which version of the <a href="/terms">Terms</a> you agreed to and when;</li>
         <li>whether your page is <strong>public or private</strong>, and its <strong>settings</strong>: the counters you add, their labels and goals, and how the page looks and sounds;</li>
         <li>the <strong>YouTube channel</strong> you connect (its channel ID, what you typed to find it, and when), and the <strong>Bluesky profiles</strong> you add;</li>
+        <li>if you paste one, your own <strong>YouTube API key</strong> and when you added it (see <a href="#youtube">section 4</a>);</li>
         <li>if we suspend your account, when and why.</li>
       </ul>
       <p>We use this to run your account and your page. Lawful basis: <strong>contract</strong>, because we need it to provide the service you asked for. We keep the record of your age confirmation and agreement to the Terms, and any suspension, for our <strong>legitimate interests</strong> in showing that our rules were agreed to and in keeping the site safe.</p>
@@ -107,7 +108,8 @@
 
       <h2 id="youtube">4. YouTube and Bluesky</h2>
       <p>This site uses <strong>YouTube API Services</strong> to show public YouTube channel statistics. By using the site to show a YouTube channel, you agree to be bound by the <a href="https://www.youtube.com/t/terms" rel="noopener noreferrer">YouTube Terms of Service</a>. Google’s use of data is covered by the <a href="https://policies.google.com/privacy" rel="noopener noreferrer">Google Privacy Policy</a>.</p>
-      <p>From YouTube, the site reads only a channel’s <strong>public</strong> details: its ID, name, handle, profile picture, and total views, subscribers and number of videos. It does this with the site’s own API key: you never sign in to Google here, and the site can’t see your Google account, your private data or anything you haven’t made public on YouTube. The latest reading is refreshed about once a minute while a page showing the channel is open. It’s deleted within 7 days once no page asks for it, and readings that can’t be refreshed are deleted within 30 days. To stop the site reading your channel, disconnect it in your page’s settings (App) or delete your account.</p>
+      <p>From YouTube, the site reads only a channel’s <strong>public</strong> details: its ID, name, handle, profile picture, and total views, subscribers and number of videos. It does this with a YouTube API key: your own, if you paste one when you connect your channel, or otherwise a key the site provides. Either way, you never sign in to Google here, and the site can’t see your Google account, your private data or anything you haven’t made public on YouTube. The latest reading is refreshed about once a minute while a page showing the channel is open. It’s deleted within 7 days once no page asks for it, and readings that can’t be refreshed are deleted within 30 days. To stop the site reading your channel, disconnect it in your page’s settings (Channel) or delete your account.</p>
+      <p><strong>If you paste your own API key</strong>, it’s kept with your account in the site’s private database and used only by the site’s server, only to read the public numbers of the channel on your page (about once a minute while your page is open, whoever is looking at it). It’s never shown on any page or sent to anyone’s browser: the site only ever shows you its last 4 characters, and your data download includes only those. Readings made with your key count towards your Google Cloud project’s free daily allowance. Disconnecting YouTube in your page’s settings, or deleting your account, deletes the key straight away, and you can also delete or restrict it in Google Cloud at any time. Lawful basis: <strong>contract</strong>, because you asked us to use it to show your channel.</p>
       <p>From Bluesky, the site reads a profile’s public name, handle, picture and follower and post counts through Bluesky’s public API, in the same way.</p>
       <p>All of this is requested by the site’s own server, not your browser, and profile pictures are passed through the site too. So when you view a page, no information about you is sent to YouTube (Google) or Bluesky. If you click a link to their sites, their own privacy policies apply there. The site does store a few small items on your device, as listed in the <a href="/cookies">Cookie policy</a>. None of them are used for YouTube or shared with anyone.</p>
 
@@ -117,7 +119,7 @@
         <li><strong>Vercel Inc.</strong> hosts the site and its network of servers, and provides visit counting if you allow it. See <a href="https://vercel.com/legal/privacy-policy" rel="noopener noreferrer">Vercel’s privacy policy</a>.</li>
         <li><strong>Upstash Inc.</strong> provides the site’s database (stored in London), which holds accounts, page settings, the latest public numbers and the short-lived security counts. See <a href="https://upstash.com/trust/privacy.pdf" rel="noopener noreferrer">Upstash’s privacy policy</a>.</li>
       </ul>
-      <p>The site’s server also sends channel IDs and Bluesky handles (but nothing about you or your account) to <strong>Google</strong> (YouTube Data API) and <strong>Bluesky</strong> to read the public numbers. Google receives your IP address and browser details only if you allow fonts from Google.</p>
+      <p>The site’s server also sends channel IDs and Bluesky handles to <strong>Google</strong> (YouTube Data API) and <strong>Bluesky</strong> to read the public numbers. Requests to Google include the API key used, which is yours if you added one, so Google can tell those requests come from your Google Cloud project. Nothing else about you or your account is sent. Google receives your IP address and browser details only if you allow fonts from Google.</p>
       <p>We may share information if the law requires it, for example with the police or a regulator such as Ofcom. We don’t sell personal data or use it for advertising.</p>
 
       <h2 id="transfers">6. Transfers outside the UK</h2>
@@ -131,6 +133,7 @@
             <tr><td>Your account, page and settings</td><td>Until you delete your account, or until 12 months pass with nobody signing in to it or opening its page, when it’s deleted automatically. Deleting is immediate; copies of a public page in Vercel’s network can take up to 2 minutes to go.</td></tr>
             <tr><td>Sign-in cookie</td><td>Until you close your browser (at most 12 hours), or 30 days if you choose “Keep me signed in”. Signing out, “Sign out everywhere” and changing your password end it sooner.</td></tr>
             <tr><td>Security counts (coded IP addresses, wrong tries, look-ups)</td><td>15 minutes; 1 hour for sign-ups and look-ups</td></tr>
+            <tr><td>Your own YouTube API key (if you add one)</td><td>Until you replace it, disconnect YouTube or delete your account (or the account is deleted after 12 months unused)</td></tr>
             <tr><td>Latest public numbers of channels and profiles</td><td>Refreshed about once a minute while needed; deleted within 7 days once no page asks for them, and within 30 days if they can’t be refreshed</td></tr>
             <tr><td>Profile pictures shown on pages</td><td>Passed through the site, and kept in Vercel’s cache for up to a day</td></tr>
             <tr><td>Hosting logs (IP address, browser, pages)</td><td>A limited time set by Vercel</td></tr>
@@ -157,7 +160,7 @@
       <p>We follow the ICO’s Age Appropriate Design Code (the Children’s code). The site is designed to be private by default for everyone: we don’t ask for real names, emails, ages or locations; pages start private; we don’t use your data for advertising or profiling; there’s no messaging, comments or sharing between users; and the optional extras (fonts from Google and visit counting) stay off unless you turn them on. Before you make your page public, the site explains who will be able to see it.</p>
 
       <h2 id="security">10. Security</h2>
-      <p>The site is only served over an encrypted connection (HTTPS). Passwords and recovery codes are stored only as strong one-way hashes (scrypt and SHA-256). The sign-in cookie can’t be read by scripts or sent from other sites, repeated wrong passwords are blocked for a while, and changing your password signs you out everywhere else. Please use a password you don’t use anywhere else, and keep your recovery code safe. If we ever had a security problem that put your data at risk, we’d deal with it as the law requires, including telling the ICO when needed. As we don’t have your email, we’d tell you on the site.</p>
+      <p>The site is only served over an encrypted connection (HTTPS). Passwords and recovery codes are stored only as strong one-way hashes (scrypt and SHA-256). A YouTube API key you add is only ever used by the site’s server and is never sent to any browser. The sign-in cookie can’t be read by scripts or sent from other sites, repeated wrong passwords are blocked for a while, and changing your password signs you out everywhere else. Please use a password you don’t use anywhere else, and keep your recovery code safe. If we ever had a security problem that put your data at risk, we’d deal with it as the law requires, including telling the ICO when needed. As we don’t have your email, we’d tell you on the site.</p>
 
       <h2 id="complaints">11. Complaints</h2>
       <p>If you’re unhappy with how we’ve handled your personal data, please tell us first at <a href="mailto:noobvexbusiness@gmail.com">noobvexbusiness@gmail.com</a>. We’ll acknowledge your complaint within 30 days and respond without undue delay.</p>

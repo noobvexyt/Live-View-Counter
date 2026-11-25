@@ -76,11 +76,7 @@
       <h1 class="local-only">Watch your channel’s views count up live</h1>
       <p class="lede local-only">Connect your channel once. Then this page shows your total views, ticking up as new views come in.</p>
       <h1 class="hosted-only">Show your channel’s numbers</h1>
-      <p class="lede hosted-only">Type your channel’s @handle. Your page then shows its official total views from YouTube, checked about once a minute. You can add subscribers, videos and Bluesky followers too.</p>
-      <div id="yt-off" class="setup-note hosted-only" role="status" hidden>
-        <p id="yt-off-text">YouTube isn’t switched on for this site yet, so channels can’t be added right now. You can count Bluesky followers in the meantime.</p>
-        <p id="yt-off-owner">Run this site? Add the YouTube API key on the <a href="/admin">Site owner page</a>, then come back here.</p>
-      </div>
+      <p class="lede hosted-only">Type your channel’s @handle and paste your free YouTube API key. Your page then shows the channel’s official total views from YouTube, checked about once a minute. You can add subscribers, videos and Bluesky followers too.</p>
 
       <form id="setup-form" class="form" novalidate>
         <label class="field">
@@ -89,21 +85,22 @@
           <span class="field-hint">A link to any of your videos works too.</span>
         </label>
         <div id="in-key-field" class="field">
-          <label class="field-label" for="in-key">YouTube Data API key</label>
+          <label class="field-label" for="in-key"><span id="in-key-label">YouTube Data API key</span></label>
           <div class="key-row">
             <input id="in-key" type="password" placeholder="AIza…" autocomplete="off" autocapitalize="off" spellcheck="false">
             <button type="button" class="ghost small" data-toggle-key="in-key">Show</button>
           </div>
           <span class="field-hint local-only">Free from Google. It’s saved only on this computer.</span>
+          <span id="in-key-hint" class="field-hint hosted-only">Free from Google: the steps below show how to get one (about 3 minutes). It’s kept with your account in this site’s private database, never shown on any page, and only used to read your channel’s public numbers.</span>
         </div>
-        <p class="fine flush hosted-only">Only public channel numbers are read, using this site’s own YouTube API key. By connecting a channel you agree to <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">YouTube’s Terms of Service</a>. See the <a href="/privacy">Privacy policy</a> for how this works.</p>
+        <p class="fine flush hosted-only">Only public channel numbers are read. By connecting a channel you agree to <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">YouTube’s Terms of Service</a>, and a key you paste must be from your own Google Cloud project. See the <a href="/privacy">Privacy policy</a> for how this works.</p>
         <p id="setup-error" class="form-error" role="alert" hidden></p>
         <button id="btn-connect" class="primary" type="submit">Start counting</button>
       </form>
       <button id="btn-skip-youtube" class="link-btn" type="button"><span class="local-only">Count TikTok, Twitch, Kick, Bluesky or Instagram instead</span><span class="hosted-only">Count Bluesky followers instead</span></button>
       <p class="fine hosted-only setup-foot"><a href="/account">Your account</a> · <a href="/">Home</a></p>
 
-      <details class="guide local-only" open>
+      <details id="key-guide" class="guide" open>
         <summary>How to get your free API key (about 3 minutes)</summary>
         <ol>
           <li>Open <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener noreferrer">Google Cloud: new project</a> and sign in with your Google account. Name the project <b>Live View Counter</b> and click <b>Create</b>.</li>
@@ -459,14 +456,14 @@
       <!-- ===== App ===== -->
       <div class="panel" role="tabpanel" data-panel="app" hidden>
         <section class="sheet-section">
-          <h3><span class="local-only">YouTube channel and API key</span><span class="hosted-only">YouTube channel</span></h3>
+          <h3>YouTube channel and API key</h3>
           <form id="settings-form" class="form" novalidate>
             <label class="field">
               <span class="field-label">Channel</span>
               <input id="set-channel" type="text" placeholder="@yourhandle or your channel link" autocomplete="off" autocapitalize="off" spellcheck="false">
             </label>
             <div id="set-key-field" class="field">
-              <label class="field-label" for="set-key">API key</label>
+              <label class="field-label" for="set-key"><span id="set-key-label">API key</span></label>
               <div class="key-row">
                 <input id="set-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
                 <button type="button" class="ghost small" data-toggle-key="set-key">Show</button>
@@ -474,7 +471,15 @@
               <span id="set-key-hint" class="field-hint">Leave empty to keep the saved key.</span>
             </div>
             <p id="set-key-env" class="fine flush local-only" hidden>Using the YOUTUBE_API_KEY set in Vercel’s environment variables.</p>
-            <p class="fine flush hosted-only">Your @handle or a link to your channel. Only its public numbers are read. By connecting a channel you agree to <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">YouTube’s Terms of Service</a>.</p>
+            <details id="set-key-guide" class="guide tight hosted-only">
+              <summary>How to get a free API key (about 3 minutes)</summary>
+              <ol>
+                <li>Open <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener noreferrer">Google Cloud: new project</a>, sign in with your Google account and create a project.</li>
+                <li>Open <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener noreferrer">YouTube Data API v3</a> with that project selected and click <b>Enable</b>.</li>
+                <li>Open <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">Credentials</a>, click <b>+ Create credentials</b>, choose <b>API key</b>, then copy it and paste it above.</li>
+              </ol>
+            </details>
+            <p class="fine flush hosted-only">Your @handle or a link to your channel. Only its public numbers are read. By connecting a channel you agree to <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">YouTube’s Terms of Service</a>, and a key you paste must be from your own Google Cloud project.</p>
             <p id="settings-error" class="form-error" role="alert" hidden></p>
             <div class="row">
               <button id="btn-save" class="primary" type="submit">Save</button>

@@ -39,7 +39,7 @@ const BSKY_BASE = String(env.LVC_BSKY_BASE || 'https://public.api.bsky.app').rep
 
 // ---------- limits and timings ----------
 const PLATFORMS = ['youtube', 'bluesky'];
-const TERMS_VERSION = '2026-11-24';
+const TERMS_VERSION = '2026-11-25';
 const MIN_ADMIN_PASSWORD = 12;
 const REFRESH_MS = 60_000;               // each watched channel or profile is read about once a minute
 const WANT_MS = 10 * 60_000;             // ...for 10 minutes after a page last asked for it
@@ -391,6 +391,9 @@ async function savedKey(fresh = false) {
   return rememberKey(await cmd('GET', K.ytKey));
 }
 const keyToUse = (saved) => (saved && saved.key) || ENV_YT_KEY;
+// A page owner's own key, pasted when they set up their page (kept with their account, never sent out).
+const ownKeyOf = (rec) => (rec && isObj(rec.ytKey) && typeof rec.ytKey.key === 'string' && KEY_RE.test(rec.ytKey.key) ? rec.ytKey.key : '');
+const ownKeyHint = (rec) => (ownKeyOf(rec) ? `…${rec.ytKey.key.slice(-4)}` : '');
 const siteKey = async (fresh = false) => keyToUse(await savedKey(fresh).catch(() => keyMemo.saved));
 
 // What an account's page needs read: its YouTube channel and its Bluesky profiles.
@@ -404,20 +407,34 @@ function wantsOf(rec) {
   return { yt, bs };
 }
 
-function needsReading(cache, wants, now) {
+function needsReading(cache, wants, now, ownKey = '') {
   const stale = (e) => !e || now >= (e.nextAt || 0) || now - (e.wantAt || 0) > WANT_RENEW_MS;
-  return wants.yt.some((id) => stale(cache.yt[id])) || wants.bs.some((h) => stale(cache.bs[h]));
+  const trySite = Boolean(keyToUse(keyMemo.saved)); // (as last seen: this is only a quick check)
+  return wants.yt.some((id) => stale(cache.yt[id]) || otherKeyFailed(cache.yt[id], ownKey, trySite)) || wants.bs.some((h) => stale(cache.bs[h]));
 }
 
-function setFailed(e, kind, message, now) {
+// True when a channel's last reading failed because of a key this page doesn't use (another page
+// owner's, or the site's), so reading it again with this page's key straight away may work.
+function otherKeyFailed(e, ownKey, siteKeyThere) {
+  const err = e && e.error;
+  if (!err) return false;
+  if (ownKey) return !err.mine && (err.kind === 'quota' || err.kind === 'unavailable');
+  return Boolean(err.mine) && Boolean(siteKeyThere);
+}
+
+// extra.mine: the problem is with the page owner's own API key (only they see the details).
+function setFailed(e, kind, message, now, extra = {}) {
   e.failures = (e.failures || 0) + 1;
   let wait;
   let status;
   if (kind === 'quota') { wait = msUntilQuotaReset(now) + 60_000; status = 'quota'; }
-  else if (kind === 'notFound' || kind === 'unavailable') { wait = MAX_BACKOFF_MS; status = 'error'; }
+  else if (kind === 'notFound' || kind === 'unavailable' || kind === 'ownKey') { wait = MAX_BACKOFF_MS; status = 'error'; }
   else { wait = Math.min(MAX_BACKOFF_MS, REFRESH_MS * 2 ** Math.min(e.failures - 1, 4)); status = 'offline'; }
   e.status = status;
-  e.error = { kind, message, retryAt: now + wait, ...(kind === 'quota' ? { resetAt: now + wait } : {}) };
+  e.error = {
+    kind, message, retryAt: now + wait, ...(kind === 'quota' ? { resetAt: now + wait } : {}),
+    ...(extra.mine ? { mine: true } : {}), ...(extra.link ? { link: extra.link } : {}),
+  };
   e.checkedAt = now;
   e.nextAt = now + wait;
 }
@@ -428,7 +445,9 @@ const ytInfo = (info) => ({
   id: info.id, title: info.title, handle: info.handle, thumb: info.thumb, subs: info.subs, videoCount: info.videoCount, views: info.viewCount,
 });
 
-async function readYouTube(cache, ids, now, apiKey) {
+// Reads channels with one API key: the site's (shared, in batches of 50) or, with mine = true, a
+// page owner's own key (just their channel).
+async function readYouTube(cache, ids, now, apiKey, mine = false) {
   if (!ids.length) return;
   if (!apiKey) {
     for (const id of ids) setFailed(cache.yt[id], 'unavailable', UNAVAILABLE, now);
@@ -439,7 +458,7 @@ async function readYouTube(cache, ids, now, apiKey) {
     const chunk = ids.slice(i, i + 50);
     try {
       const res = await yt.channels({ part: 'snippet,statistics', id: chunk.join(','), maxResults: 50 });
-      delete cache.keyIssue;
+      if (!mine) delete cache.keyIssue;
       const found = new Map((Array.isArray(res && res.items) ? res.items : []).map((it) => [it.id, it]));
       for (const id of chunk) {
         const item = found.get(id);
@@ -448,15 +467,21 @@ async function readYouTube(cache, ids, now, apiKey) {
       }
     } catch (err) {
       const kind = err instanceof YouTubeError ? err.kind : 'network';
-      if (!(err instanceof YouTubeError) || kind === 'auth' || kind === 'bad') console.error('YouTube:', err.message || err);
+      if (!mine && (!(err instanceof YouTubeError) || kind === 'auth' || kind === 'bad')) console.error('YouTube:', err.message || err);
       let message = 'Can’t reach YouTube right now. Trying again soon.';
       let k = kind;
-      if (kind === 'quota') message = 'This site has used up today’s YouTube allowance. Numbers update again after midnight Pacific time.';
+      let extra = {};
+      if (mine && (kind === 'quota' || kind === 'auth' || kind === 'bad')) {
+        // The page owner's own key: tell them exactly what Google said (visitors see a plain message).
+        extra = { mine: true, link: err.link || '' };
+        if (kind === 'quota') message = 'Your API key’s free YouTube allowance for today is used up. Numbers update again after midnight Pacific time.';
+        else { message = `Your API key stopped working. ${String(err.message || 'Google refused it.').slice(0, 300)}`; k = 'ownKey'; }
+      } else if (kind === 'quota') message = 'This site has used up today’s YouTube allowance. Numbers update again after midnight Pacific time.';
       else if (kind === 'auth' || kind === 'bad' || kind === 'notFound') { message = UNAVAILABLE; k = 'unavailable'; }
-      if (kind === 'quota' || kind === 'auth' || kind === 'bad') {
+      if (!mine && (kind === 'quota' || kind === 'auth' || kind === 'bad')) {
         cache.keyIssue = { kind, message: String(err.message || '').slice(0, 300), link: err.link || '', at: now };
       }
-      for (const id of chunk) setFailed(cache.yt[id], k, message, now);
+      for (const id of chunk) setFailed(cache.yt[id], k, message, now, extra);
     }
   }
 }
@@ -522,9 +547,12 @@ function prune(cache, now) {
   }
 }
 
-// Notes what these pages want, then reads everything wanted recently that's due (in batches).
+// Notes what this page wants, then reads everything wanted recently that's due (in batches).
+// ownKey: the page owner's own YouTube API key, if they saved one. Their channel is then read with it
+// (by their page, whoever is looking at it), and while that page is being looked at, it's left out of
+// the site key's shared batches.
 // Returns the new cache, or null if another request is already doing this.
-async function readNow(wants, now, change) {
+async function readNow(wants, now, change, ownKey = '') {
   const id = await lock(K.cacheLock, 0);
   if (!id) return null;
   try {
@@ -532,11 +560,27 @@ async function readNow(wants, now, change) {
     const cache = cacheOf(cacheText);
     const apiKey = keyToUse(rememberKey(keyText));
     if (change) change(cache);
-    for (const cid of wants.yt) (cache.yt[cid] = isObj(cache.yt[cid]) ? cache.yt[cid] : {}).wantAt = now;
+    for (const cid of wants.yt) {
+      const e = (cache.yt[cid] = isObj(cache.yt[cid]) ? cache.yt[cid] : {});
+      e.wantAt = now;
+      if (ownKey) e.ownAt = now;
+      delete e.own; // (an earlier version's flag)
+    }
     for (const h of wants.bs) (cache.bs[h] = isObj(cache.bs[h]) ? cache.bs[h] : {}).wantAt = now;
     // (Things due in the next 20 seconds are read too, so they line up and are read together.)
     const due = (map) => Object.keys(map).filter((k) => now - (map[k].wantAt || 0) <= WANT_MS && now + 20_000 >= (map[k].nextAt || 0));
-    await Promise.all([readYouTube(cache, due(cache.yt).slice(0, 500), now, apiKey), readBluesky(cache, due(cache.bs).slice(0, 250), now)]);
+    const dueYt = due(cache.yt);
+    for (const cid of wants.yt) if (!dueYt.includes(cid) && otherKeyFailed(cache.yt[cid], ownKey, apiKey)) dueYt.push(cid);
+    const mine = ownKey ? dueYt.filter((cid) => wants.yt.includes(cid)) : [];
+    // A channel someone is watching with their own key is read with that key, not the site's (unless
+    // this page wants it too and the site has a key).
+    const ownWatched = (cid) => now - (cache.yt[cid].ownAt || 0) <= WANT_MS;
+    const shared = dueYt.filter((cid) => !mine.includes(cid) && (!ownWatched(cid) || (apiKey && wants.yt.includes(cid)))).slice(0, 500);
+    await Promise.all([
+      readYouTube(cache, shared, now, apiKey),
+      readYouTube(cache, mine, now, ownKey, true),
+      readBluesky(cache, due(cache.bs).slice(0, 250), now),
+    ]);
     prune(cache, now);
     await cmd('SET', K.cache, JSON.stringify(cache));
     return cache;
@@ -578,12 +622,25 @@ function snapshotOf(rec, cache, now, own) {
   const cid = rec.yt && rec.yt.channelId;
   const y = cid && isObj(cache.yt[cid]) ? cache.yt[cid] : null;
   const info = y && y.info;
+  let error = (y && y.error) || null;
+  const ownKey = ownKeyOf(rec);
+  if (error && error.mine && !(own && ownKey)) {
+    // Problems with the owner's own API key are theirs to see; visitors get a plain message.
+    error = {
+      kind: error.kind === 'quota' ? 'quota' : 'unavailable',
+      message: error.kind === 'quota' ? 'Today’s YouTube allowance for this page is used up. Numbers update again after midnight Pacific time.' : UNAVAILABLE,
+      retryAt: error.retryAt,
+      ...(error.resetAt ? { resetAt: error.resetAt } : {}),
+    };
+  } else if (error && own && !ownKey && error.kind === 'unavailable' && !keyToUse(keyMemo.saved)) {
+    error = { ...error, message: 'This site has no shared YouTube key at the moment. Paste your own free API key in Settings, under Channel, to carry on.' };
+  }
   return {
     app: 'live-view-counter',
     hosted: true,
     page: { name: rec.name, own: Boolean(own), public: publicOf(rec) },
     status: cid ? (y && y.status) || 'starting' : 'setup',
-    error: (y && y.error) || null,
+    error,
     channel: info ? {
       id: info.id, title: info.title, handle: info.handle, thumb: avatarPath(`youtube:${info.id}`, info.thumb), subs: info.subs, videoCount: info.videoCount,
     } : null,
@@ -604,8 +661,8 @@ async function pageSnapshot(rec, cacheText, own) {
   let cache = cacheOf(cacheText);
   const wants = wantsOf(rec);
   const now = Date.now();
-  if (needsReading(cache, wants, now)) {
-    const fresh = await readNow(wants, now).catch((e) => { console.error('Reading:', e); return null; });
+  if (needsReading(cache, wants, now, ownKeyOf(rec))) {
+    const fresh = await readNow(wants, now, null, ownKeyOf(rec)).catch((e) => { console.error('Reading:', e); return null; });
     if (fresh) cache = fresh;
   }
   return snapshotOf(rec, cache, Date.now(), own);
@@ -651,8 +708,8 @@ async function handleConfig(request) {
     signIn: kvReady(),
     signUp: SIGNUPS_OPEN && kvReady(),
     owner: OWNER_NAME,
-    envKey: true,                  // nobody pastes API keys on the website
-    ytAvailable: Boolean(await siteKey()),
+    envKey: false,                 // everyone can paste their own YouTube API key (or use the site's)
+    ytAvailable: Boolean(await siteKey()), // the site owner added a key that everyone can use
     platforms: PLATFORMS,
     analytics: ANALYTICS,
     lan: false,
@@ -667,6 +724,7 @@ async function handleConfig(request) {
       out.user = { name: r.name, suspended: Boolean(r.suspended), public: publicOf(r), page: pagePath(r) };
       out.configured = Boolean(r.yt && r.yt.channelId);
       out.channelInput = (r.yt && r.yt.channelInput) || '';
+      out.keyHint = ownKeyHint(r); // only the last 4 characters of their own key, if they saved one
     }
     out.moderator = await isAdmin(request).catch(() => false);
   }
@@ -800,6 +858,7 @@ async function handleMe(request) {
     public: publicOf(r),
     page: pagePath(r),
     youtube: r.yt ? { input: r.yt.channelInput || r.yt.channelId } : null,
+    keyHint: ownKeyHint(r),
     counters: isObj(r.settings) && Array.isArray(r.settings.counters) ? r.settings.counters.length : 0,
   });
 }
@@ -876,6 +935,8 @@ async function handleExport(request) {
       address: pagePath(rec),
       public: publicOf(rec),
       youtubeChannel: rec.yt ? { channelId: rec.yt.channelId, whatYouTyped: rec.yt.channelInput || '', connectedAt: iso(rec.yt.savedAt) } : null,
+      // (Your own key itself isn't put in this file, so a copy can't leak from your downloads.)
+      yourYouTubeKey: ownKeyOf(rec) ? { saved: true, endsWith: rec.ytKey.key.slice(-4), savedAt: iso(rec.ytKey.addedAt) } : null,
       settings: isObj(rec.settings) ? rec.settings : {},
     },
   };
@@ -931,7 +992,7 @@ async function handleSettingsSave(request) {
   });
   let cache = cacheOf(await cmd('GET', K.cache));
   const wants = wantsOf(saved);
-  if (needsReading(cache, wants, Date.now())) cache = (await readNow(wants, Date.now()).catch(() => null)) || cache; // new accounts are read straight away
+  if (needsReading(cache, wants, Date.now(), ownKeyOf(saved))) cache = (await readNow(wants, Date.now(), null, ownKeyOf(saved)).catch(() => null)) || cache; // new accounts are read straight away
   return json(200, { ok: true, rev: saved.rev, counters: next.counters, state: snapshotOf(saved, cache, Date.now(), true) });
 }
 
@@ -963,11 +1024,20 @@ async function handleConnect(request) {
   guard(request);
   const { rec } = await requireUser(request);
   notSuspended(rec);
-  const apiKey = await siteKey(true);
-  if (!apiKey) throw new UserError(NOT_SET_UP, null, 503, { kind: 'notSetUp' });
   const body = await readBody(request);
   const input = String(body.channel || '').trim().slice(0, 300);
+  // Everyone can paste their own (free) YouTube API key. Without one, the site's key is used if the
+  // site owner added one.
+  const pasted = String(body.apiKey || '').replace(/\s+/g, '');
+  if (pasted && !KEY_RE.test(pasted)) {
+    throw new UserError('That doesn’t look like an API key. It’s one long piece of text with no spaces, about 39 characters, and usually starts with “AIza”.', 'apiKey');
+  }
   if (!input) throw new UserError('Enter your channel’s @handle or a link to it.', 'channel');
+  const ownKey = pasted || ownKeyOf(rec);
+  const apiKey = ownKey || (await siteKey(true));
+  if (!apiKey) {
+    throw new UserError('Paste your YouTube Data API key. It’s free from Google, and the steps below show how to get one.', 'apiKey', 400, { kind: 'needKey' });
+  }
   await spendLookup(rec.name);
   let info;
   try {
@@ -975,27 +1045,46 @@ async function handleConnect(request) {
   } catch (e) {
     if (!(e instanceof YouTubeError)) throw e;
     if (e.kind === 'notFound' || e.kind === 'bad') return fail(400, e.message, { field: 'channel', kind: e.kind });
-    if (e.kind === 'quota') return fail(503, 'This site has used up today’s YouTube allowance. Please try again after midnight Pacific time.', { kind: 'quota' });
-    console.error('YouTube (connect):', e.message);
-    return fail(503, e.kind === 'auth' ? UNAVAILABLE : 'Can’t reach YouTube right now. Please try again in a minute.', { kind: e.kind });
+    if (e.kind === 'quota') {
+      return ownKey
+        ? fail(400, 'Google says this API key’s free allowance for today is used up. Try again after midnight Pacific time, or use a key from another Google Cloud project.', { field: 'apiKey', kind: 'quota' })
+        : fail(503, 'This site has used up today’s YouTube allowance. Paste your own free API key to carry on now, or try again after midnight Pacific time.', { field: 'apiKey', kind: 'quota' });
+    }
+    if (e.kind === 'auth' && ownKey) return fail(400, e.message, { field: 'apiKey', kind: 'auth', ...(e.link ? { link: e.link } : {}) });
+    if (e.kind === 'auth') {
+      console.error('YouTube (connect, site key):', e.message);
+      return fail(503, 'The site’s own YouTube key isn’t working right now. Paste your own free API key to carry on.', { field: 'apiKey', kind: 'auth' });
+    }
+    return fail(503, 'Can’t reach YouTube right now. Please try again in a minute.', { kind: e.kind });
   }
   if (!/^UC[\w-]{22}$/.test(info.id)) throw new UserError('That channel can’t be used.', 'channel');
-  const { rec: next } = await withUser(rec.name, (r) => { r.yt = { channelId: info.id, channelInput: input, savedAt: Date.now() }; });
+  const { rec: next } = await withUser(rec.name, (r) => {
+    r.yt = { channelId: info.id, channelInput: input, savedAt: Date.now() };
+    if (pasted) r.ytKey = { key: pasted, addedAt: Date.now() };
+  });
   const now = Date.now();
   const put = (c) => {
     c.yt[info.id] = isObj(c.yt[info.id]) ? c.yt[info.id] : {};
     setRead(c.yt[info.id], info, now);
   };
-  let cache = await readNow(wantsOf(next), now, put).catch(() => null);
+  let cache = await readNow(wantsOf(next), now, put, ownKeyOf(next)).catch(() => null);
   if (!cache) { cache = { yt: {}, bs: {} }; put(cache); }
-  return json(200, { ok: true, channel: { id: info.id, title: info.title, handle: info.handle }, state: snapshotOf(next, cache, Date.now(), true) });
+  return json(200, {
+    ok: true,
+    channel: { id: info.id, title: info.title, handle: info.handle },
+    keyHint: ownKeyHint(next),
+    state: snapshotOf(next, cache, Date.now(), true),
+  });
 }
 
+// Removes the channel and the page owner's own API key (if they saved one).
 async function handleDisconnect(request) {
   guard(request);
   const { rec } = await requireUser(request);
-  notSuspended(rec);
-  const { rec: next } = await withUser(rec.name, (r) => { r.yt = null; });
+  const { rec: next } = await withUser(rec.name, (r) => {
+    r.yt = null;
+    delete r.ytKey;
+  });
   return json(200, { ok: true, state: snapshotOf(next, cacheOf(await cmd('GET', K.cache)), Date.now(), true) });
 }
 
@@ -1214,6 +1303,7 @@ async function handleAdminUser(request) {
       page: pagePath(rec),
       suspended: rec.suspended ? { at: rec.suspended.at, reason: rec.suspended.reason || '' } : null,
       youtubeChannel: rec.yt ? rec.yt.channelId : null,
+      ownKey: Boolean(ownKeyOf(rec)),
       counters: isObj(rec.settings) && Array.isArray(rec.settings.counters) ? rec.settings.counters.length : 0,
     },
   });
